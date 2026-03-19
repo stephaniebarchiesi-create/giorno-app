@@ -1,0 +1,26 @@
+{
+  "name": "giorno-server",
+  "version": "1.0.0",
+  "description": "Giorno health tracker server",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/memoizee": "^0.4.12",
+    "@types/passport": "^1.0.17",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^4.21.2",
+    "express-session": "^1.19.0",
+    "memoizee": "^0.4.17",
+    "openid-client": "^6.8.2",
+    "passport": "^0.7.0",
+    "pg": "^8.13.3"
+  }
+}
