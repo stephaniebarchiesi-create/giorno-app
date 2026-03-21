@@ -179,13 +179,6 @@ app.get('/api/login', async (req, res) => {
       req.session.save(err => err ? reject(err) : resolve())
     );
 
-    res.redirect('/');
-  } catch (err) {
-    console.error('Test login error:', err);
-    res.status(500).send('Login failed');
-  }
-});
-
     res.redirect(redirectUrl.href);
   } catch (err) {
     console.error('Login error:', err);
