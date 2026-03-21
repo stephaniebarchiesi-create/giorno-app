@@ -155,37 +155,44 @@ function isAuthenticated(req, res, next) {
 }
 
 // ---- AUTH ROUTES ----
+
+// Simple test login for dev / free access
 app.get('/api/login', async (req, res) => {
   try {
     const testUser = {
       claims: {
         sub: 'test-user-1',
-        email: 'stephaniebarchiesi@gmail.com'
+        email: 'stephaniebarchiesi@gmail.com',
+        first_name: 'Stephanie',
+        last_name: 'Barchiesi'
       }
     };
 
     // Create user in DB if not exists
     await pool.query(`
-      INSERT INTO users (id, email, is_owner)
-      VALUES ($1, $2, true)
+      INSERT INTO users (id, email, first_name, last_name, is_owner)
+      VALUES ($1, $2, $3, $4, true)
       ON CONFLICT (id) DO NOTHING
-    `, [testUser.claims.sub, testUser.claims.email]);
+    `, [testUser.claims.sub, testUser.claims.email, testUser.claims.first_name, testUser.claims.last_name]);
 
-    await new Promise((resolve, reject) =>
-      req.logIn(testUser, err => err ? reject(err) : resolve())
-    );
+    // Log user into session
+    await new Promise((resolve, reject) => {
+      req.logIn(testUser, err => err ? reject(err) : resolve());
+    });
 
-    await new Promise((resolve, reject) =>
-      req.session.save(err => err ? reject(err) : resolve())
-    );
+    // Save session and redirect to main app
+    await new Promise((resolve, reject) => {
+      req.session.save(err => err ? reject(err) : resolve());
+    });
 
-    res.redirect(redirectUrl.href);
+    res.redirect('/');
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).send('Login failed — please try again.');
+    console.error('Test login error:', err);
+    res.status(500).send('Login failed');
   }
 });
 
+// OIDC callback route (real login, optional)
 app.get('/api/callback', async (req, res) => {
   try {
     const config = await getOidcConfig();
@@ -223,42 +230,6 @@ app.get('/api/callback', async (req, res) => {
     console.error('Callback error:', err.message);
     res.redirect('/api/login');
   }
-});
-
-app.delete('/api/account', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user.claims.sub;
-    await pool.query('DELETE FROM shortcut_tokens WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM shortcut_readings WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM user_data WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM sessions WHERE sess::text LIKE $1', [`%"sub":"${userId}"%`]);
-    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-    req.logout(() => {});
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Delete account error:', err);
-    res.status(500).json({ error: 'Failed to delete account' });
-  }
-});
-
-app.get('/api/auth/me', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user.claims.sub;
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-    const user = result.rows[0];
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    const tokenResult = await pool.query('SELECT token FROM shortcut_tokens WHERE user_id = $1', [userId]);
-    res.json({
-      id: user.id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      profileImageUrl: user.profile_image_url,
-      isPaid: user.is_paid || user.is_owner,
-      isOwner: user.is_owner,
-      shortcutToken: tokenResult.rows[0]?.token || null
-    });
-  } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
 });
 
 // ---- USER DATA API ----
