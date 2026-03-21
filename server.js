@@ -180,10 +180,17 @@ app.get('/api/login', async (req, res) => {
       req.logIn(testUser, err => err ? reject(err) : resolve());
     });
 
-    // Save session and redirect to main app
+    // Save session
     await new Promise((resolve, reject) => {
       req.session.save(err => err ? reject(err) : resolve());
     });
+
+    // Redirect to home
+    res.redirect('/');
+
+  } catch (err) {
+    console.error('Test login error:', err);
+    res.status(500).send('Login failed');
   }
 });
 
