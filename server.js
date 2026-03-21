@@ -160,7 +160,7 @@ app.get('/api/login', async (req, res) => {
     const testUser = {
       claims: {
         sub: 'test-user-1',
-        email: 'stephanie@test.com'
+        email: 'stephaniebarchiesi@gmail.com'
       }
     };
 
@@ -230,18 +230,6 @@ app.get('/api/callback', async (req, res) => {
     console.error('Callback error:', err.message);
     res.redirect('/api/login');
   }
-});
-
-app.get('/api/logout', (req, res) => {
-  req.logout(async () => {
-    try {
-      const config = await getOidcConfig();
-      const endUrl = oidcClient.buildEndSessionUrl(config, {
-        post_logout_redirect_uri: `https://${req.hostname}`
-      }).href;
-      res.redirect(endUrl);
-    } catch { res.redirect('/'); }
-  });
 });
 
 app.delete('/api/account', isAuthenticated, async (req, res) => {
