@@ -184,11 +184,6 @@ app.get('/api/login', async (req, res) => {
     await new Promise((resolve, reject) => {
       req.session.save(err => err ? reject(err) : resolve());
     });
-
-    res.redirect('/');
-  } catch (err) {
-    console.error('Test login error:', err);
-    res.status(500).send('Login failed');
   }
 });
 
@@ -229,7 +224,6 @@ app.get('/api/callback', async (req, res) => {
   } catch (err) {
     console.error('Callback error:', err.message);
     res.redirect('/api/login');
-  }
 });
 
 // ---- USER DATA API ----
