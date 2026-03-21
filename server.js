@@ -157,24 +157,34 @@ function isAuthenticated(req, res, next) {
 // ---- AUTH ROUTES ----
 app.get('/api/login', async (req, res) => {
   try {
-    const config = await getOidcConfig();
-    const codeVerifier = oidcClient.randomPKCECodeVerifier();
-    const codeChallenge = await oidcClient.calculatePKCECodeChallenge(codeVerifier);
-    const state = oidcClient.randomState();
+    const testUser = {
+      claims: {
+        sub: 'test-user-1',
+        email: 'stephanie@test.com'
+      }
+    };
 
-    req.session.oidc = { codeVerifier, state };
-    await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
+    // Create user in DB if not exists
+    await pool.query(`
+      INSERT INTO users (id, email, is_owner)
+      VALUES ($1, $2, true)
+      ON CONFLICT (id) DO NOTHING
+    `, [testUser.claims.sub, testUser.claims.email]);
 
-    const callbackURL = `https://${req.hostname}/api/callback`;
-    const redirectUrl = oidcClient.buildAuthorizationUrl(config, new URLSearchParams({
-      response_type: 'code',
-      redirect_uri: callbackURL,
-      scope: 'openid email profile offline_access',
-      state,
-      code_challenge: codeChallenge,
-      code_challenge_method: 'S256',
-      prompt: 'login consent',
-    }));
+    await new Promise((resolve, reject) =>
+      req.logIn(testUser, err => err ? reject(err) : resolve())
+    );
+
+    await new Promise((resolve, reject) =>
+      req.session.save(err => err ? reject(err) : resolve())
+    );
+
+    res.redirect('/');
+  } catch (err) {
+    console.error('Test login error:', err);
+    res.status(500).send('Login failed');
+  }
+});
 
     res.redirect(redirectUrl.href);
   } catch (err) {
