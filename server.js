@@ -1,32 +1,22 @@
 import express from 'express';
 import session from 'express-session';
+import passport from 'passport';
 import connectPgSimple from 'connect-pg-simple';
-import { Pool } from 'pg';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import path from 'path';
 import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import pg from 'pg';
 import crypto from 'crypto';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 5000;
-const DATA_FILE = path.join(__dirname, 'shortcut-data.json');
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const { Pool } = pg;
 const PgSession = connectPgSimple(session);
+const PORT = process.env.PORT || 5000;
+const DATA_FILE = join(__dirname, 'shortcut-data.json');
 
-const app = express();
-app.use(express.json({ limit: '10mb' }));
-app.set('trust proxy', 1);
+// ---- DATABASE ----
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-app.use(session({
-  store: new PgSession({ pool, createTableIfMissing: true }),
-  secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { httpOnly: true, secure: !!process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7*24*60*60*1000 }
-}));
-
-// ---- DB INIT ----
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -34,28 +24,44 @@ async function initDb() {
       email VARCHAR UNIQUE,
       first_name VARCHAR,
       last_name VARCHAR,
-      is_paid BOOLEAN DEFAULT FALSE,
-      is_owner BOOLEAN DEFAULT FALSE,
+      is_paid BOOLEAN DEFAULT TRUE,
+      is_owner BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
-    CREATE TABLE IF NOT EXISTS shortcut_tokens (
-      user_id VARCHAR PRIMARY KEY,
-      token VARCHAR UNIQUE NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
+
+    CREATE TABLE IF NOT EXISTS user_data (
+      user_id VARCHAR NOT NULL,
+      key VARCHAR NOT NULL,
+      value JSONB,
+      updated_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (user_id, key)
     );
+
     CREATE TABLE IF NOT EXISTS shortcut_readings (
       user_id VARCHAR NOT NULL,
       date VARCHAR NOT NULL,
-      data JSONB,
+      hrv FLOAT,
+      hr FLOAT,
+      sleep FLOAT,
       timestamp TIMESTAMP DEFAULT NOW(),
       PRIMARY KEY (user_id, date)
     );
+
+    CREATE TABLE IF NOT EXISTS shortcut_readings_history (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR NOT NULL,
+      date VARCHAR NOT NULL,
+      metric VARCHAR NOT NULL,
+      value FLOAT,
+      timestamp TIMESTAMP DEFAULT NOW()
+    );
   `);
-  console.log('Database tables ready');
+
+  console.log('Database ready');
 }
 
-// ---- LEGACY FILE STORAGE ----
+// ---- LEGACY FILE BACKUP ----
 function loadShortcutData() {
   try { return JSON.parse(readFileSync(DATA_FILE, 'utf8')); } catch { return {}; }
 }
@@ -63,144 +69,165 @@ function saveShortcutData(data) {
   writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-// ---- AUTH ----
-app.use((req, res, next) => {
-  req.isAuthenticated = () => !!req.session.user;
-  next();
-});
-app.get('/api/login', async (req, res) => {
-  const user = {
-    id: 'test-user-1',
-    email: 'stephaniebarchiesi@gmail.com',
-    first_name: 'Stephanie',
-    last_name: 'Barchiesi',
-    is_owner: true,
-    is_paid: true
-  };
-  await pool.query(`
-    INSERT INTO users (id, email, first_name, last_name, is_owner, is_paid)
-    VALUES ($1,$2,$3,$4,$5,$6)
-    ON CONFLICT (id) DO UPDATE
-      SET is_owner = EXCLUDED.is_owner,
-          is_paid = EXCLUDED.is_paid,
-          updated_at = NOW()
-  `, [user.id, user.email, user.first_name, user.last_name, user.is_owner, user.is_paid]);
+// ---- APP ----
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.set('trust proxy', 1);
 
-  req.session.user = user;
-  res.json({ ok: true, user });
-});
+// ---- SESSION ----
+app.use(session({
+  store: new PgSession({ pool, tableName: 'sessions' }),
+  secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: !!process.env.NODE_ENV, sameSite: 'lax', maxAge: 7*24*60*60*1000 }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.serializeUser((user, cb) => cb(null, user));
+passport.deserializeUser((user, cb) => cb(null, user));
 
 function isAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-// ---- SHORTCUT TOKEN ENDPOINT ----
-app.post('/shortcut-token', isAuthenticated, async (req, res) => {
-  try {
-    const token = 'sc_' + crypto.randomBytes(16).toString('hex');
-    await pool.query(`
-      INSERT INTO shortcut_tokens (user_id, token)
-      VALUES ($1,$2)
-      ON CONFLICT (user_id) DO UPDATE SET token = EXCLUDED.token
-    `, [req.session.user.id, token]);
-    res.json({ token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
+// ---- LOGIN ----
+app.get('/api/login', async (req, res) => {
+  const testUser = {
+    id: 'test-user-1',
+    email: 'stephaniebarchiesi@gmail.com',
+    first_name: 'Stephanie',
+    last_name: 'Barchiesi',
+    is_paid: true,
+    is_owner: true
+  };
+
+  await pool.query(`
+    INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
+    VALUES ($1,$2,$3,$4,$5,$6)
+    ON CONFLICT (id) DO NOTHING
+  `, [testUser.id, testUser.email, testUser.first_name, testUser.last_name, true, true]);
+
+  req.logIn(testUser, err => {
+    if (err) return res.status(500).json({ message: 'Login failed' });
+    res.json({ ok: true, user: testUser });
+  });
 });
 
-// ---- SHORTCUT DATA ENDPOINT ----
-app.get('/shortcut', async (req, res) => {
-  const { token, ...incoming } = req.query;
+// ---- USER DATA API ----
+app.get('/api/data', isAuthenticated, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT key, value FROM user_data WHERE user_id=$1', [req.user.id]);
+    const data = {};
+    result.rows.forEach(r => data[r.key] = r.value);
+    res.json(data);
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
+});
+
+app.post('/api/data', isAuthenticated, async (req, res) => {
+  try {
+    const updates = req.body;
+    for (const [key, value] of Object.entries(updates)) {
+      await pool.query(`
+        INSERT INTO user_data (user_id, key, value, updated_at)
+        VALUES ($1,$2,$3,NOW())
+        ON CONFLICT (user_id,key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()
+      `, [req.user.id, key, JSON.stringify(value)]);
+    }
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
+});
+
+// ---- SHORTCUT / DAILY LOG ----
+app.get('/shortcut', isAuthenticated, async (req, res) => {
+  const { sleep, hr, hrv } = req.query;
+  const userId = req.user.id;
   const today = new Date().toISOString().split('T')[0];
 
-  if (!token) return res.status(400).json({ message: 'No token provided' });
-
   try {
-    const result = await pool.query('SELECT user_id FROM shortcut_tokens WHERE token=$1', [token]);
-    if (!result.rows.length) return res.status(401).json({ message: 'Invalid token' });
-    const userId = result.rows[0].user_id;
+    // Get existing row
+    const existing = await pool.query('SELECT * FROM shortcut_readings WHERE user_id=$1 AND date=$2', [userId, today]);
+    const row = existing.rows[0] || {};
 
-    const existing = await pool.query('SELECT data FROM shortcut_readings WHERE user_id=$1 AND date=$2', [userId, today]);
-    const merged = { ...(existing.rows[0]?.data || {}), ...Object.fromEntries(Object.entries(incoming).map(([k,v]) => [k, parseFloat(v)])) };
+    // Prepare update values
+    const updates = {};
+    if (sleep) updates.sleep = parseFloat(sleep);
+    if (hr) updates.hr = parseFloat(hr);
+    if (hrv) updates.hrv = parseFloat(hrv);
 
+    // Insert or update main table
     await pool.query(`
-      INSERT INTO shortcut_readings (user_id, date, data, timestamp)
-      VALUES ($1,$2,$3,NOW())
-      ON CONFLICT (user_id,date) DO UPDATE
-      SET data = $3, timestamp = NOW()
-    `, [userId, today, merged]);
+      INSERT INTO shortcut_readings (user_id, date, sleep, hr, hrv, timestamp)
+      VALUES ($1,$2,$3,$4,$5,NOW())
+      ON CONFLICT (user_id,date) DO UPDATE SET
+        sleep=COALESCE(EXCLUDED.sleep, shortcut_readings.sleep),
+        hr=COALESCE(EXCLUDED.hr, shortcut_readings.hr),
+        hrv=COALESCE(EXCLUDED.hrv, shortcut_readings.hrv),
+        timestamp=NOW()
+    `, [userId, today, updates.sleep ?? row.sleep, updates.hr ?? row.hr, updates.hrv ?? row.hrv]);
 
-    res.json({ ok: true, saved: merged });
+    // Insert into history table
+    for (const [metric, value] of Object.entries(updates)) {
+      await pool.query(`
+        INSERT INTO shortcut_readings_history (user_id, date, metric, value)
+        VALUES ($1,$2,$3,$4)
+      `, [userId, today, metric, value]);
+    }
+
+    res.json({ ok: true, today: updates });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error saving shortcut data' });
   }
 });
 
-// ---- LOG HISTORY ----
+// ---- HISTORY ----
 app.get('/shortcut-history', isAuthenticated, async (req, res) => {
   try {
-    const userId = req.session.user.id;
-    const result = await pool.query('SELECT * FROM shortcut_readings WHERE user_id=$1 ORDER BY date DESC LIMIT 30', [userId]);
-    if (result.rows.length) return res.json(result.rows);
-    // fallback
-    const data = loadShortcutData();
-    const sorted = Object.entries(data).sort((a,b)=>b[0].localeCompare(a[0])).map(([date, vals])=>({date, ...vals}));
-    res.json(sorted);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
+    const result = await pool.query('SELECT * FROM shortcut_readings_history WHERE user_id=$1 ORDER BY date DESC, timestamp DESC LIMIT 100', [req.user.id]);
+    res.json(result.rows);
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Error fetching history' }); }
 });
 
-// ---- ADD EXTRA FIELDS TO LOG HISTORY ----
-app.post('/shortcut-history/:date', isAuthenticated, async (req, res) => {
-  const { date } = req.params;
-  const updates = req.body;
-  if (!updates || typeof updates !== 'object') return res.status(400).json({ message: 'Invalid body' });
-
+// ---- DAILY LOG DATA ----
+app.get('/shortcut-data', isAuthenticated, async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
   try {
-    const userId = req.session.user.id;
-    const existing = await pool.query('SELECT data FROM shortcut_readings WHERE user_id=$1 AND date=$2', [userId, date]);
-    const merged = { ...(existing.rows[0]?.data || {}), ...updates };
-    await pool.query(`
-      INSERT INTO shortcut_readings (user_id,date,data,timestamp)
-      VALUES ($1,$2,$3,NOW())
-      ON CONFLICT (user_id,date) DO UPDATE
-      SET data=$3, timestamp=NOW()
-    `, [userId,date,merged]);
-    res.json({ ok: true, saved: merged });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
+    const result = await pool.query('SELECT * FROM shortcut_readings WHERE user_id=$1 AND date=$2', [req.user.id, today]);
+    if (result.rows.length) return res.json(result.rows[0]);
+  } catch (err) { console.error(err); }
+  // fallback to legacy file
+  const data = loadShortcutData();
+  res.json(data[today] || {});
 });
 
-// ---- SERVE APP ----
-app.get('/', async (req, res) => {
-  const filePath = path.join(__dirname,'giorno.html');
+// ---- STATIC / FRONTEND ----
+app.get('/', (req, res) => {
+  const filePath = join(__dirname, 'giorno.html');
   try {
-    let html = readFileSync(filePath,'utf8');
+    let html = readFileSync(filePath, 'utf8');
+
     if (req.isAuthenticated()) {
       const injection = `<script>
-window.__GIORNO_USER__ = ${JSON.stringify(req.session.user)};
+window.__GIORNO_USER__ = ${JSON.stringify(req.user)};
 </script>`;
-      html = html.replace('</head>', injection+'\n</head>');
+      const headClose = html.indexOf('</head>');
+      if (headClose !== -1) html = html.slice(0, headClose) + injection + '\n</head>' + html.slice(headClose + 7);
     }
-    res.setHeader('Content-Type','text/html');
+
+    res.setHeader('Content-Type', 'text/html');
     res.send(html);
   } catch {
     res.status(404).send('giorno.html not found');
   }
 });
 
-app.use((req,res)=>res.status(404).send('Not found'));
-
 // ---- START ----
-initDb().then(()=>app.listen(PORT,()=>console.log(`Giorno server running on port ${PORT}`))).catch(err=>{
-  console.error('Failed to init database:', err);
+initDb().then(() => {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}).catch(err => {
+  console.error('Failed to init DB:', err);
   process.exit(1);
 });
