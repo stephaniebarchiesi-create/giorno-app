@@ -1,9 +1,6 @@
-import express from 'express';
-import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import crypto from 'crypto';
+const express = require('express');
+const pg = require('pg');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,8 +10,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(express.json());
 
@@ -55,12 +50,14 @@ async function getUserByToken(token) {
   return result.rows[0];
 }
 
-// ---------- AUTH (SIMPLE) ----------
-app.post('/api/login', async (req, res) => {
+// ---------- LOGIN (GET for easy testing) ----------
+app.get('/api/login', async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = req.query.email;
 
-    if (!email) return res.status(400).json({ error: 'Email required' });
+    if (!email) {
+      return res.send('Add ?email=you@example.com');
+    }
 
     let result = await pool.query(
       'SELECT * FROM users WHERE email = $1',
@@ -84,9 +81,10 @@ app.post('/api/login', async (req, res) => {
       email: user.email,
       token: user.token
     });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).send('error');
   }
 });
 
@@ -121,9 +119,10 @@ app.get('/shortcut', async (req, res) => {
     console.log(`Saved for ${user.email}`);
 
     res.json({ ok: true });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).send('error');
   }
 });
 
@@ -131,8 +130,8 @@ app.get('/shortcut', async (req, res) => {
 app.get('/api/today', async (req, res) => {
   try {
     const { token } = req.query;
-    const user = await getUserByToken(token);
 
+    const user = await getUserByToken(token);
     if (!user) return res.json({});
 
     const today = new Date().toISOString().split('T')[0];
@@ -143,7 +142,8 @@ app.get('/api/today', async (req, res) => {
     );
 
     res.json(result.rows[0] || {});
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.json({});
   }
 });
@@ -152,8 +152,8 @@ app.get('/api/today', async (req, res) => {
 app.get('/api/history', async (req, res) => {
   try {
     const { token } = req.query;
-    const user = await getUserByToken(token);
 
+    const user = await getUserByToken(token);
     if (!user) return res.json([]);
 
     const result = await pool.query(
@@ -162,27 +162,20 @@ app.get('/api/history', async (req, res) => {
     );
 
     res.json(result.rows);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.json([]);
   }
 });
 
-// ---------- SERVE FRONTEND ----------
-app.get('/', (req, res) => {
-  const filePath = path.join(__dirname, 'giorno.html');
-
-  try {
-    const html = fs.readFileSync(filePath, 'utf8');
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
-  } catch {
-    res.status(404).send('giorno.html not found');
-  }
+// ---------- HEALTH ----------
+app.get('/health', (req, res) => {
+  res.send('OK');
 });
 
 // ---------- START ----------
 initDb().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log('Server running on port ' + PORT);
   });
 });
