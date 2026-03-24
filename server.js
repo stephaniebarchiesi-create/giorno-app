@@ -54,7 +54,7 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 // ---- TRUST PROXY FOR RENDER ----
-app.set('trust proxy', 1); // critical on Render
+app.set('trust proxy', 1);
 
 // ---- SESSION ----
 app.use(session({
@@ -63,7 +63,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true, // HTTPS only
+    secure: true,
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
@@ -80,7 +80,7 @@ function isAuthenticated(req, res, next) {
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-// ---- LOGIN (real account) ----
+// ---- LOGIN (real account, safe insert) ----
 app.get('/api/login', async (req, res) => {
   try {
     const user = {
@@ -92,11 +92,11 @@ app.get('/api/login', async (req, res) => {
       is_owner: true
     };
 
-    // insert into DB if not exists
+    // insert, skip if email exists
     await pool.query(`
       INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
       VALUES ($1,$2,$3,$4,$5,$6)
-      ON CONFLICT (id) DO NOTHING
+      ON CONFLICT (email) DO NOTHING
     `, [user.id, user.email, user.first_name, user.last_name, user.is_paid, user.is_owner]);
 
     req.logIn(user, err => {
@@ -157,7 +157,7 @@ app.get('/api/data', isAuthenticated, async (req, res) => {
 app.post('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
-    const updates = req.body; // { key: value }
+    const updates = req.body;
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(`
         INSERT INTO user_data (user_id, key, value)
