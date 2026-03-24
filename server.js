@@ -1,12 +1,11 @@
 import express from 'express';
 import session from 'express-session';
-import passport from 'passport';
 import connectPgSimple from 'connect-pg-simple';
 import pg from 'pg';
+import passport from 'passport';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import crypto from 'crypto';
+import { readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
@@ -38,14 +37,16 @@ async function initDb() {
     );
 
     CREATE TABLE IF NOT EXISTS shortcut_readings (
+      id SERIAL PRIMARY KEY,
       user_id VARCHAR NOT NULL,
-      date VARCHAR NOT NULL,
+      date DATE NOT NULL,
+      entry_time TIMESTAMP DEFAULT NOW(),
       hrv FLOAT,
       hr FLOAT,
-      sleep FLOAT,
-      updated_at TIMESTAMP DEFAULT NOW(),
-      PRIMARY KEY (user_id, date)
+      sleep FLOAT
     );
+
+    CREATE INDEX IF NOT EXISTS idx_shortcut_user_date ON shortcut_readings(user_id, date);
   `);
   console.log('Database ready');
 }
@@ -86,7 +87,7 @@ app.get('/api/login', async (req, res) => {
 
   await pool.query(`
     INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1,$2,$3,$4,$5,$6)
     ON CONFLICT (id) DO NOTHING
   `, [testUser.id, testUser.email, testUser.first_name, testUser.last_name, testUser.is_paid, testUser.is_owner]);
 
@@ -96,24 +97,17 @@ app.get('/api/login', async (req, res) => {
   });
 });
 
-// ---- SHORTCUTS ----
-app.get('/shortcut', async (req, res) => {
-  const { hrv, hr, sleep, user_id } = req.query;
-  if (!user_id) return res.status(400).json({ message: 'Missing user_id' });
-
-  const today = new Date().toISOString().split('T')[0];
-  const sleepVal = sleep ? parseFloat(sleep) : null;
+// ---- SHORTCUTS: multiple entries per day ----
+app.post('/shortcut', isAuthenticated, async (req, res) => {
+  const { hrv, hr, sleep } = req.body;
+  const userId = req.user.id;
+  const today = new Date().toISOString().split('T')[0]; // current date
 
   try {
     await pool.query(`
-      INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
-      ON CONFLICT (user_id, date) DO UPDATE
-        SET hrv = COALESCE(EXCLUDED.hrv, shortcut_readings.hrv),
-            hr = COALESCE(EXCLUDED.hr, shortcut_readings.hr),
-            sleep = COALESCE(EXCLUDED.sleep, shortcut_readings.sleep),
-            updated_at = NOW()
-    `, [user_id, today, hrv ? parseFloat(hrv) : null, hr ? parseFloat(hr) : null, sleepVal]);
+      INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [userId, today, hrv ? parseFloat(hrv) : null, hr ? parseFloat(hr) : null, sleep ? parseFloat(sleep) : null]);
 
     res.json({ ok: true });
   } catch (err) {
@@ -122,33 +116,63 @@ app.get('/shortcut', async (req, res) => {
   }
 });
 
-// ---- USER DATA (additive logs) ----
+// ---- USER DATA (daily logs, additive) ----
 app.get('/api/data', isAuthenticated, async (req, res) => {
-  const userId = req.user.id;
-  const result = await pool.query('SELECT key, value, created_at FROM user_data WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
-  res.json(result.rows);
+  try {
+    const userId = req.user.id;
+    const result = await pool.query(`
+      SELECT key, value, created_at 
+      FROM user_data 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `, [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('User data fetch error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.post('/api/data', isAuthenticated, async (req, res) => {
-  const userId = req.user.id;
-  const updates = req.body; // { key: value }
   try {
+    const userId = req.user.id;
+    const updates = req.body; // { key: value }
     for (const [key, value] of Object.entries(updates)) {
-      await pool.query('INSERT INTO user_data (user_id, key, value) VALUES ($1, $2, $3)', [userId, key, JSON.stringify(value)]);
+      await pool.query(`
+        INSERT INTO user_data (user_id, key, value)
+        VALUES ($1, $2, $3)
+      `, [userId, key, JSON.stringify(value)]);
     }
     res.json({ ok: true });
   } catch (err) {
-    console.error(err);
+    console.error('User data insert error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // ---- HISTORY ----
 app.get('/history', isAuthenticated, async (req, res) => {
-  const userId = req.user.id;
-  const readings = await pool.query('SELECT * FROM shortcut_readings WHERE user_id = $1 ORDER BY date DESC', [userId]);
-  const logs = await pool.query('SELECT * FROM user_data WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
-  res.json({ readings: readings.rows, logs: logs.rows });
+  try {
+    const userId = req.user.id;
+    const readingsResult = await pool.query(`
+      SELECT * 
+      FROM shortcut_readings 
+      WHERE user_id = $1 
+      ORDER BY date DESC, entry_time DESC
+    `, [userId]);
+
+    const logsResult = await pool.query(`
+      SELECT * 
+      FROM user_data 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `, [userId]);
+
+    res.json({ readings: readingsResult.rows, logs: logsResult.rows });
+  } catch (err) {
+    console.error('History fetch error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // ---- SERVE HTML ----
@@ -158,9 +182,7 @@ app.get('/', (req, res) => {
     let html = readFileSync(filePath, 'utf8');
     if (req.isAuthenticated()) {
       const user = req.user;
-      const injection = `<script>
-window.__GIORNO_USER__ = ${JSON.stringify(user)};
-</script>`;
+      const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};</script>`;
       const headClose = html.indexOf('</head>');
       if (headClose !== -1) {
         html = html.slice(0, headClose) + injection + html.slice(headClose);
@@ -173,9 +195,7 @@ window.__GIORNO_USER__ = ${JSON.stringify(user)};
   }
 });
 
-// ---- START ----
+// ---- START SERVER ----
 initDb().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}).catch(err => {
-  console.error('DB init failed:', err);
-});
+}).catch(err => console.error('DB init failed:', err));
