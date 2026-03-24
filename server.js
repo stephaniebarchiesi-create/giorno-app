@@ -12,8 +12,9 @@ const { Pool } = pg;
 const PgSession = connectPgSimple(session);
 const PORT = process.env.PORT || 5000;
 
-// ---- DATABASE ----
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 async function initDb() {
   await pool.query(`
@@ -46,17 +47,15 @@ async function initDb() {
       sleep FLOAT
     );
   `);
+
   console.log('Database ready');
 }
 
-// ---- EXPRESS ----
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-// ---- TRUST PROXY FOR RENDER ----
 app.set('trust proxy', 1);
 
-// ---- SESSION ----
 app.use(session({
   store: new PgSession({ pool, tableName: 'sessions' }),
   secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
@@ -71,16 +70,15 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 passport.serializeUser((user, cb) => cb(null, user));
 passport.deserializeUser((user, cb) => cb(null, user));
 
-// ---- AUTH ----
 function isAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
-  res.status(401).json({ message: 'Unauthorized' });
+  return res.status(401).json({ message: 'Unauthorized' });
 }
 
-// ---- LOGIN (real account, safe insert) ----
 app.get('/api/login', async (req, res) => {
   try {
     const user = {
@@ -92,52 +90,61 @@ app.get('/api/login', async (req, res) => {
       is_owner: true
     };
 
-    // insert, skip if email exists
     await pool.query(`
       INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
-      VALUES ($1,$2,$3,$4,$5,$6)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (email) DO NOTHING
-    `, [user.id, user.email, user.first_name, user.last_name, user.is_paid, user.is_owner]);
+    `, [
+      user.id,
+      user.email,
+      user.first_name,
+      user.last_name,
+      user.is_paid,
+      user.is_owner
+    ]);
 
-    req.logIn(user, err => {
+    req.logIn(user, (err) => {
       if (err) {
         console.error('Login error:', err);
         return res.status(500).json({ message: 'Login failed' });
       }
-      res.json({ ok: true, user });
-    });
 
+      return res.json({ ok: true, user });
+    });
   } catch (err) {
     console.error('Login route error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ---- SHORTCUTS ----
-app.post('/shortcut', isAuthenticated, async (req, res) => {
-  const { hrv, hr, sleep } = req.body;
-  const userId = req.user.id;
+// IMPORTANT: no isAuthenticated here
+app.post('/shortcut', async (req, res) => {
+  const { user_id, hrv, hr, sleep } = req.body;
   const today = new Date().toISOString().split('T')[0];
+
+  if (!user_id) {
+    return res.status(400).json({ message: 'Missing user_id' });
+  }
 
   try {
     await pool.query(`
       INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep)
       VALUES ($1, $2, $3, $4, $5)
     `, [
-      userId,
+      user_id,
       today,
       hrv != null ? parseFloat(hrv) : null,
       hr != null ? parseFloat(hr) : null,
       sleep != null ? parseFloat(sleep) : null
     ]);
-    res.json({ ok: true });
+
+    return res.json({ ok: true });
   } catch (err) {
     console.error('Shortcut error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ---- USER DATA (daily logs) ----
 app.get('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -147,10 +154,11 @@ app.get('/api/data', isAuthenticated, async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
     `, [userId]);
-    res.json(result.rows);
+
+    return res.json(result.rows);
   } catch (err) {
     console.error('User data fetch error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -158,23 +166,25 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
     const updates = req.body;
+
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(`
         INSERT INTO user_data (user_id, key, value)
         VALUES ($1, $2, $3)
       `, [userId, key, JSON.stringify(value)]);
     }
-    res.json({ ok: true });
+
+    return res.json({ ok: true });
   } catch (err) {
     console.error('User data insert error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ---- HISTORY ----
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
+
     const readingsResult = await pool.query(`
       SELECT *
       FROM shortcut_readings
@@ -189,37 +199,44 @@ app.get('/history', isAuthenticated, async (req, res) => {
       ORDER BY created_at DESC
     `, [userId]);
 
-    res.json({
+    return res.json({
       readings: readingsResult.rows,
       logs: logsResult.rows
     });
   } catch (err) {
     console.error('History fetch error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ---- SERVE HTML ----
 app.get('/', (req, res) => {
   const filePath = join(__dirname, 'giorno.html');
+
   try {
     let html = readFileSync(filePath, 'utf8');
+
     if (req.isAuthenticated()) {
-      const user = req.user;
-      const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};</script>`;
+      const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(req.user)};</script>`;
       const headClose = html.indexOf('</head>');
+
       if (headClose !== -1) {
         html = html.slice(0, headClose) + injection + html.slice(headClose);
       }
     }
+
     res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+    return res.send(html);
   } catch {
-    res.status(404).send('giorno.html not found');
+    return res.status(404).send('giorno.html not found');
   }
 });
 
-// ---- START SERVER ----
-initDb().then(() => {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}).catch(err => console.error('DB init failed:', err));
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('DB init failed:', err);
+  });
