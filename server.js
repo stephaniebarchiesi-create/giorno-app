@@ -101,13 +101,19 @@ app.get('/api/login', async (req, res) => {
 app.post('/shortcut', isAuthenticated, async (req, res) => {
   const { hrv, hr, sleep } = req.body;
   const userId = req.user.id;
-  const today = new Date().toISOString().split('T')[0]; // current date
+  const today = new Date().toISOString().split('T')[0];
 
   try {
     await pool.query(`
       INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep)
       VALUES ($1, $2, $3, $4, $5)
-    `, [userId, today, hrv ? parseFloat(hrv) : null, hr ? parseFloat(hr) : null, sleep ? parseFloat(sleep) : null]);
+    `, [
+      userId,
+      today,
+      hrv != null ? parseFloat(hrv) : null,
+      hr != null ? parseFloat(hr) : null,
+      sleep != null ? parseFloat(sleep) : null
+    ]);
 
     res.json({ ok: true });
   } catch (err) {
@@ -116,14 +122,14 @@ app.post('/shortcut', isAuthenticated, async (req, res) => {
   }
 });
 
-// ---- USER DATA (daily logs, additive) ----
+// ---- USER DATA (daily logs) ----
 app.get('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query(`
-      SELECT key, value, created_at 
-      FROM user_data 
-      WHERE user_id = $1 
+      SELECT key, value, created_at
+      FROM user_data
+      WHERE user_id = $1
       ORDER BY created_at DESC
     `, [userId]);
     res.json(result.rows);
@@ -154,21 +160,25 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
+
     const readingsResult = await pool.query(`
-      SELECT * 
-      FROM shortcut_readings 
-      WHERE user_id = $1 
+      SELECT *
+      FROM shortcut_readings
+      WHERE user_id = $1
       ORDER BY date DESC, entry_time DESC
     `, [userId]);
 
     const logsResult = await pool.query(`
-      SELECT * 
-      FROM user_data 
-      WHERE user_id = $1 
+      SELECT *
+      FROM user_data
+      WHERE user_id = $1
       ORDER BY created_at DESC
     `, [userId]);
 
-    res.json({ readings: readingsResult.rows, logs: logsResult.rows });
+    res.json({
+      readings: readingsResult.rows,
+      logs: logsResult.rows
+    });
   } catch (err) {
     console.error('History fetch error:', err);
     res.status(500).json({ message: 'Server error' });
