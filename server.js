@@ -16,9 +16,10 @@ const app = express();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false
 });
 
 // ---------- HELPERS ----------
@@ -27,21 +28,27 @@ function isAuthenticated(req, res, next) {
   return res.status(401).json({ message: 'Unauthorized' });
 }
 
-function toNumberOrNull(value) {
+function toNumberOrNull(value, decimals = null) {
   if (value === null || value === undefined || value === '') return null;
 
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null;
-  }
+  let num = null;
 
-  if (typeof value === 'string') {
+  if (typeof value === 'number') {
+    num = Number.isFinite(value) ? value : null;
+  } else if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    const n = Number(trimmed);
-    return Number.isFinite(n) ? n : null;
+    const parsed = Number(trimmed);
+    num = Number.isFinite(parsed) ? parsed : null;
   }
 
-  return null;
+  if (num === null) return null;
+
+  if (decimals !== null) {
+    return Number(num.toFixed(decimals));
+  }
+
+  return num;
 }
 
 // ---------- DB INIT + MIGRATION ----------
@@ -81,7 +88,7 @@ async function initDb() {
     );
   `);
 
-  // Repair older versions of shortcut_readings that used (user_id, date) as primary key
+  // Repair older versions of shortcut_readings
   await pool.query(`
     ALTER TABLE shortcut_readings
     ADD COLUMN IF NOT EXISTS id BIGINT;
@@ -150,12 +157,18 @@ async function initDb() {
   `);
 
   await pool.query(`
-    ALTER TABLE shortcut_readings
-    ADD PRIMARY KEY (id);
-  `).catch((err) => {
-    // Ignore "already exists" style failures on repeated deploys
-    if (!String(err.message).includes('multiple primary keys')) throw err;
-  });
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'shortcut_readings_id_pkey'
+      ) THEN
+        ALTER TABLE shortcut_readings ADD PRIMARY KEY (id);
+      END IF;
+    END
+    $$;
+  `);
 
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_shortcut_readings_user_date
@@ -274,9 +287,10 @@ app.post('/shortcut', async (req, res) => {
       return res.status(400).json({ message: 'Missing user_id' });
     }
 
-    const hrvNum = toNumberOrNull(hrv);
-    const hrNum = toNumberOrNull(hr);
-    const sleepNum = toNumberOrNull(sleep);
+    // Rounded on the server so Shortcuts float weirdness does not matter
+    const hrvNum = toNumberOrNull(hrv, 1);
+    const hrNum = toNumberOrNull(hr, 1);
+    const sleepNum = toNumberOrNull(sleep, 1);
 
     if (hrv !== undefined && hrvNum === null) {
       return res.status(400).json({ message: 'Invalid hrv value' });
