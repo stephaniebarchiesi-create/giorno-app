@@ -16,7 +16,9 @@ const app = express();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : false
 });
 
 // ---------- HELPERS ----------
@@ -35,14 +37,14 @@ function toNumberOrNull(value) {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    const num = Number(trimmed);
-    return Number.isFinite(num) ? num : null;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : null;
   }
 
   return null;
 }
 
-// ---------- DB INIT ----------
+// ---------- DB INIT + MIGRATION ----------
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -78,6 +80,82 @@ async function initDb() {
       sleep DOUBLE PRECISION
     );
   `);
+
+  // Repair older versions of shortcut_readings that used (user_id, date) as primary key
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ADD COLUMN IF NOT EXISTS id BIGINT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ADD COLUMN IF NOT EXISTS entry_time TIMESTAMP DEFAULT NOW();
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_class
+        WHERE relkind = 'S'
+          AND relname = 'shortcut_readings_id_seq'
+      ) THEN
+        CREATE SEQUENCE shortcut_readings_id_seq;
+      END IF;
+    END
+    $$;
+  `);
+
+  await pool.query(`
+    ALTER SEQUENCE shortcut_readings_id_seq OWNED BY shortcut_readings.id;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ALTER COLUMN id SET DEFAULT nextval('shortcut_readings_id_seq');
+  `);
+
+  await pool.query(`
+    UPDATE shortcut_readings
+    SET id = nextval('shortcut_readings_id_seq')
+    WHERE id IS NULL;
+  `);
+
+  await pool.query(`
+    SELECT setval(
+      'shortcut_readings_id_seq',
+      COALESCE((SELECT MAX(id) FROM shortcut_readings), 1),
+      true
+    );
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'shortcut_readings_pkey'
+      ) THEN
+        ALTER TABLE shortcut_readings DROP CONSTRAINT shortcut_readings_pkey;
+      END IF;
+    END
+    $$;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ALTER COLUMN id SET NOT NULL;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ADD PRIMARY KEY (id);
+  `).catch((err) => {
+    // Ignore "already exists" style failures on repeated deploys
+    if (!String(err.message).includes('multiple primary keys')) throw err;
+  });
 
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_shortcut_readings_user_date
@@ -118,10 +196,10 @@ passport.deserializeUser((user, cb) => cb(null, user));
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
     console.error('Healthcheck failed:', err);
-    res.status(500).json({ ok: false, message: 'Database unavailable' });
+    return res.status(500).json({ ok: false, message: 'Database unavailable' });
   }
 });
 
@@ -176,14 +254,15 @@ app.get('/api/logout', (req, res) => {
       console.error('Logout error:', err);
       return res.status(500).json({ message: 'Logout failed' });
     }
+
     req.session.destroy(() => {
-      res.json({ ok: true });
+      return res.json({ ok: true });
     });
   });
 });
 
 // ---------- SHORTCUT ROUTE ----------
-// No session auth here. Apple Shortcuts posts directly with user_id.
+// No browser auth here. Apple Shortcuts posts directly with user_id.
 app.post('/shortcut', async (req, res) => {
   console.log('SHORTCUT BODY:', JSON.stringify(req.body, null, 2));
 
@@ -210,8 +289,8 @@ app.post('/shortcut', async (req, res) => {
     }
 
     await pool.query(`
-      INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO shortcut_readings (user_id, date, entry_time, hrv, hr, sleep)
+      VALUES ($1, $2, NOW(), $3, $4, $5)
     `, [user_id, today, hrvNum, hrNum, sleepNum]);
 
     return res.json({
@@ -237,6 +316,7 @@ app.post('/shortcut', async (req, res) => {
 app.get('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
+
     const result = await pool.query(`
       SELECT id, key, value, created_at
       FROM user_data
