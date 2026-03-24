@@ -12,10 +12,37 @@ const { Pool } = pg;
 const PgSession = connectPgSimple(session);
 const PORT = process.env.PORT || 5000;
 
+const app = express();
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// ---------- HELPERS ----------
+function isAuthenticated(req, res, next) {
+  if (req.isAuthenticated && req.isAuthenticated()) return next();
+  return res.status(401).json({ message: 'Unauthorized' });
+}
+
+function toNumberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const num = Number(trimmed);
+    return Number.isFinite(num) ? num : null;
+  }
+
+  return null;
+}
+
+// ---------- DB INIT ----------
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -28,7 +55,9 @@ async function initDb() {
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS user_data (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR NOT NULL,
@@ -36,34 +65,45 @@ async function initDb() {
       value JSONB,
       created_at TIMESTAMP DEFAULT NOW()
     );
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS shortcut_readings (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR NOT NULL,
       date DATE NOT NULL,
       entry_time TIMESTAMP DEFAULT NOW(),
-      hrv FLOAT,
-      hr FLOAT,
-      sleep FLOAT
+      hrv DOUBLE PRECISION,
+      hr DOUBLE PRECISION,
+      sleep DOUBLE PRECISION
     );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_shortcut_readings_user_date
+    ON shortcut_readings(user_id, date);
   `);
 
   console.log('Database ready');
 }
 
-const app = express();
+// ---------- APP SETUP ----------
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 
-app.set('trust proxy', 1);
-
 app.use(session({
-  store: new PgSession({ pool, tableName: 'sessions' }),
+  store: new PgSession({
+    pool,
+    tableName: 'sessions',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
 }));
@@ -74,11 +114,18 @@ app.use(passport.session());
 passport.serializeUser((user, cb) => cb(null, user));
 passport.deserializeUser((user, cb) => cb(null, user));
 
-function isAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) return next();
-  return res.status(401).json({ message: 'Unauthorized' });
-}
+// ---------- HEALTHCHECK ----------
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Healthcheck failed:', err);
+    res.status(500).json({ ok: false, message: 'Database unavailable' });
+  }
+});
 
+// ---------- LOGIN ----------
 app.get('/api/login', async (req, res) => {
   try {
     const user = {
@@ -91,9 +138,15 @@ app.get('/api/login', async (req, res) => {
     };
 
     await pool.query(`
-      INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (email) DO NOTHING
+      INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        is_paid = EXCLUDED.is_paid,
+        is_owner = EXCLUDED.is_owner,
+        updated_at = NOW()
     `, [
       user.id,
       user.email,
@@ -113,43 +166,79 @@ app.get('/api/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login route error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
-// IMPORTANT: no isAuthenticated here
-app.post('/shortcut', async (req, res) => {
-  const { user_id, hrv, hr, sleep } = req.body;
-  const today = new Date().toISOString().split('T')[0];
+app.get('/api/logout', (req, res) => {
+  req.logout?.((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ message: 'Logout failed' });
+    }
+    req.session.destroy(() => {
+      res.json({ ok: true });
+    });
+  });
+});
 
-  if (!user_id) {
-    return res.status(400).json({ message: 'Missing user_id' });
-  }
+// ---------- SHORTCUT ROUTE ----------
+// No session auth here. Apple Shortcuts posts directly with user_id.
+app.post('/shortcut', async (req, res) => {
+  console.log('SHORTCUT BODY:', JSON.stringify(req.body, null, 2));
 
   try {
+    const { user_id, hrv, hr, sleep } = req.body;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!user_id || typeof user_id !== 'string') {
+      return res.status(400).json({ message: 'Missing user_id' });
+    }
+
+    const hrvNum = toNumberOrNull(hrv);
+    const hrNum = toNumberOrNull(hr);
+    const sleepNum = toNumberOrNull(sleep);
+
+    if (hrv !== undefined && hrvNum === null) {
+      return res.status(400).json({ message: 'Invalid hrv value' });
+    }
+    if (hr !== undefined && hrNum === null) {
+      return res.status(400).json({ message: 'Invalid hr value' });
+    }
+    if (sleep !== undefined && sleepNum === null) {
+      return res.status(400).json({ message: 'Invalid sleep value' });
+    }
+
     await pool.query(`
       INSERT INTO shortcut_readings (user_id, date, hrv, hr, sleep)
       VALUES ($1, $2, $3, $4, $5)
-    `, [
-      user_id,
-      today,
-      hrv != null ? parseFloat(hrv) : null,
-      hr != null ? parseFloat(hr) : null,
-      sleep != null ? parseFloat(sleep) : null
-    ]);
+    `, [user_id, today, hrvNum, hrNum, sleepNum]);
 
-    return res.json({ ok: true });
+    return res.json({
+      ok: true,
+      saved: {
+        user_id,
+        date: today,
+        hrv: hrvNum,
+        hr: hrNum,
+        sleep: sleepNum
+      }
+    });
   } catch (err) {
-    console.error('Shortcut error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Shortcut error full:', err);
+    return res.status(500).json({
+      message: 'Server error',
+      detail: err.message
+    });
   }
 });
 
+// ---------- USER DATA ----------
 app.get('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query(`
-      SELECT key, value, created_at
+      SELECT id, key, value, created_at
       FROM user_data
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -158,7 +247,7 @@ app.get('/api/data', isAuthenticated, async (req, res) => {
     return res.json(result.rows);
   } catch (err) {
     console.error('User data fetch error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
@@ -166,6 +255,10 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
     const updates = req.body;
+
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      return res.status(400).json({ message: 'Body must be an object' });
+    }
 
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(`
@@ -177,10 +270,11 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     console.error('User data insert error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
+// ---------- HISTORY ----------
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -205,17 +299,18 @@ app.get('/history', isAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error('History fetch error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
+// ---------- HOME ----------
 app.get('/', (req, res) => {
   const filePath = join(__dirname, 'giorno.html');
 
   try {
     let html = readFileSync(filePath, 'utf8');
 
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
       const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(req.user)};</script>`;
       const headClose = html.indexOf('</head>');
 
@@ -226,11 +321,13 @@ app.get('/', (req, res) => {
 
     res.setHeader('Content-Type', 'text/html');
     return res.send(html);
-  } catch {
+  } catch (err) {
+    console.error('HTML read error:', err);
     return res.status(404).send('giorno.html not found');
   }
 });
 
+// ---------- START ----------
 initDb()
   .then(() => {
     app.listen(PORT, () => {
@@ -239,4 +336,5 @@ initDb()
   })
   .catch((err) => {
     console.error('DB init failed:', err);
+    process.exit(1);
   });
