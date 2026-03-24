@@ -45,8 +45,6 @@ async function initDb() {
       hr FLOAT,
       sleep FLOAT
     );
-
-    CREATE INDEX IF NOT EXISTS idx_shortcut_user_date ON shortcut_readings(user_id, date);
   `);
   console.log('Database ready');
 }
@@ -55,15 +53,17 @@ async function initDb() {
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
+// ---- TRUST PROXY FOR RENDER ----
+app.set('trust proxy', 1); // critical on Render
+
 // ---- SESSION ----
-app.set('trust proxy', 1); // needed for Render HTTPS proxy
 app.use(session({
   store: new PgSession({ pool, tableName: 'sessions' }),
   secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-    secure: true, // must be true for HTTPS
+  cookie: {
+    secure: true, // HTTPS only
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000
   }
@@ -80,28 +80,37 @@ function isAuthenticated(req, res, next) {
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-// ---- LOGIN: real account ----
+// ---- LOGIN (real account) ----
 app.get('/api/login', async (req, res) => {
-  const user = {
-    id: 'stephanie',
-    email: 'stephaniebarchiesi@gmail.com',
-    first_name: 'Stephanie',
-    last_name: 'Barchiesi',
-    is_paid: true,
-    is_owner: true
-  };
+  try {
+    const user = {
+      id: 'stephanie',
+      email: 'stephaniebarchiesi@gmail.com',
+      first_name: 'Stephanie',
+      last_name: 'Barchiesi',
+      is_paid: true,
+      is_owner: true
+    };
 
-  // insert into DB if not exists
-  await pool.query(`
-    INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
-    VALUES ($1,$2,$3,$4,$5,$6)
-    ON CONFLICT (id) DO NOTHING
-  `, [user.id, user.email, user.first_name, user.last_name, user.is_paid, user.is_owner]);
+    // insert into DB if not exists
+    await pool.query(`
+      INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      ON CONFLICT (id) DO NOTHING
+    `, [user.id, user.email, user.first_name, user.last_name, user.is_paid, user.is_owner]);
 
-  req.logIn(user, err => {
-    if (err) return res.status(500).json({ message: 'Login failed' });
-    res.json({ ok: true, user });
-  });
+    req.logIn(user, err => {
+      if (err) {
+        console.error('Login error:', err);
+        return res.status(500).json({ message: 'Login failed' });
+      }
+      res.json({ ok: true, user });
+    });
+
+  } catch (err) {
+    console.error('Login route error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // ---- SHORTCUTS ----
@@ -166,7 +175,6 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
-
     const readingsResult = await pool.query(`
       SELECT *
       FROM shortcut_readings
