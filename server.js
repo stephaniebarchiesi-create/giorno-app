@@ -62,6 +62,7 @@ function sanitizeUser(row) {
   return {
     id: row.id,
     username: row.username,
+    email: row.email || null,
     is_paid: !!row.is_paid,
     is_owner: !!row.is_owner,
     created_at: row.created_at,
@@ -79,7 +80,7 @@ async function requireAuth(req, res, next) {
 
     const result = await pool.query(
       `
-      SELECT id, username, is_paid, is_owner, created_at, updated_at
+      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
       FROM users
       WHERE auth_token = $1
       LIMIT 1
@@ -283,6 +284,8 @@ app.get('/health', async (req, res) => {
 app.post('/api/signup', async (req, res) => {
   try {
     const username = normalizeUsername(req.body?.username);
+    const emailRaw = String(req.body?.email || '').trim().toLowerCase();
+    const email = emailRaw || null;
     const password = String(req.body?.password || '');
 
     if (!username) {
@@ -299,17 +302,21 @@ app.post('/api/signup', async (req, res) => {
       });
     }
 
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Enter a valid email address' });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
     const existing = await pool.query(
-      `SELECT id FROM users WHERE username = $1 LIMIT 1`,
-      [username]
+      `SELECT id FROM users WHERE username = $1 OR ($2::text IS NOT NULL AND email = $2) LIMIT 1`,
+      [username, email]
     );
 
     if (existing.rows.length > 0) {
-      return res.status(400).json({ message: 'Username already exists' });
+      return res.status(400).json({ message: 'Username or email already exists' });
     }
 
     const id = makeUserId();
@@ -319,13 +326,13 @@ app.post('/api/signup', async (req, res) => {
     const result = await pool.query(
       `
       INSERT INTO users (
-        id, username, password_hash, auth_token,
+        id, username, email, password_hash, auth_token,
         is_paid, is_owner, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, FALSE, FALSE, NOW(), NOW())
-      RETURNING id, username, auth_token, is_paid, is_owner, created_at, updated_at
+      VALUES ($1, $2, $3, $4, $5, FALSE, FALSE, NOW(), NOW())
+      RETURNING id, username, email, auth_token, is_paid, is_owner, created_at, updated_at
       `,
-      [id, username, passwordHash, token]
+      [id, username, email, passwordHash, token]
     );
 
     const user = sanitizeUser(result.rows[0]);
@@ -339,25 +346,25 @@ app.post('/api/signup', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   try {
-    const username = normalizeUsername(req.body?.username);
+    const identifier = String(req.body?.username || req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
 
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Username/email and password are required' });
     }
 
     const result = await pool.query(
       `
-      SELECT id, username, password_hash, is_paid, is_owner, created_at, updated_at
+      SELECT id, username, email, password_hash, is_paid, is_owner, created_at, updated_at
       FROM users
-      WHERE username = $1
+      WHERE username = $1 OR email = $1
       LIMIT 1
       `,
-      [username]
+      [identifier]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid username or password' });
+      return res.status(401).json({ message: 'Invalid login' });
     }
 
     const user = result.rows[0];
@@ -369,7 +376,7 @@ app.post('/api/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
 
     if (!valid) {
-      return res.status(401).json({ message: 'Invalid username or password' });
+      return res.status(401).json({ message: 'Invalid login' });
     }
 
     const token = makeToken();
@@ -387,6 +394,117 @@ app.post('/api/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ message: 'Login failed', detail: err.message });
+  }
+});
+
+app.post('/api/request-password-reset', async (req, res) => {
+  try {
+    const identifier = String(req.body?.username || req.body?.email || req.body?.identifier || '').trim().toLowerCase();
+
+    if (!identifier) {
+      return res.status(400).json({ message: 'Username or email is required' });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT id, username, email
+      FROM users
+      WHERE username = $1 OR email = $1
+      LIMIT 1
+      `,
+      [identifier]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No account found for that username or email' });
+    }
+
+    const user = result.rows[0];
+    const resetToken = makeToken();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
+
+    await pool.query(
+      `
+      UPDATE users
+      SET reset_token = $1, reset_token_expires_at = $2, updated_at = NOW()
+      WHERE id = $3
+      `,
+      [resetToken, expiresAt.toISOString(), user.id]
+    );
+
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const resetUrl = `${origin}/?reset_token=${encodeURIComponent(resetToken)}`;
+
+    return res.json({
+      ok: true,
+      message: 'Reset link created',
+      reset_url: resetUrl,
+      expires_at: expiresAt.toISOString()
+    });
+  } catch (err) {
+    console.error('Password reset request error:', err);
+    return res.status(500).json({ message: 'Could not create reset link', detail: err.message });
+  }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const token = String(req.body?.token || '').trim();
+    const password = String(req.body?.password || '');
+
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT id, username, email, is_paid, is_owner, created_at, updated_at, reset_token_expires_at
+      FROM users
+      WHERE reset_token = $1
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid reset token' });
+    }
+
+    const user = result.rows[0];
+    const expiresAt = user.reset_token_expires_at ? new Date(user.reset_token_expires_at) : null;
+
+    if (!expiresAt || expiresAt.getTime() < Date.now()) {
+      return res.status(400).json({ message: 'Reset token expired' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const authToken = makeToken();
+
+    await pool.query(
+      `
+      UPDATE users
+      SET password_hash = $1,
+          auth_token = $2,
+          reset_token = NULL,
+          reset_token_expires_at = NULL,
+          updated_at = NOW()
+      WHERE id = $3
+      `,
+      [passwordHash, authToken, user.id]
+    );
+
+    return res.json({
+      ok: true,
+      token: authToken,
+      user: sanitizeUser({ ...user, updated_at: new Date() })
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({ message: 'Could not reset password', detail: err.message });
   }
 });
 
@@ -559,7 +677,7 @@ async function optionalAuthUserFromHeader(req) {
 
     const result = await pool.query(
       `
-      SELECT id, username, is_paid, is_owner, created_at, updated_at
+      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
       FROM users
       WHERE auth_token = $1
       LIMIT 1
@@ -672,7 +790,7 @@ app.get('/api/export', requireAuth, async (req, res) => {
   try {
     const userResult = await pool.query(
       `
-      SELECT id, username, is_paid, is_owner, created_at, updated_at
+      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
       FROM users
       WHERE id = $1
       LIMIT 1
