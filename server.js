@@ -118,41 +118,13 @@ async function initDb() {
     );
   `);
 
-  // Add newer auth columns safely for older deployments
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS username TEXT;
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS password_hash TEXT;
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS auth_token TEXT;
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS is_owner BOOLEAN DEFAULT FALSE;
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
-  `);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_token TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_owner BOOLEAN DEFAULT FALSE;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();`);
 
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_idx
@@ -198,25 +170,15 @@ async function initDb() {
     );
   `);
 
-  // Repair older versions of shortcut_readings
-  await pool.query(`
-    ALTER TABLE shortcut_readings
-    ADD COLUMN IF NOT EXISTS id BIGINT;
-  `);
-
-  await pool.query(`
-    ALTER TABLE shortcut_readings
-    ADD COLUMN IF NOT EXISTS entry_time TIMESTAMP DEFAULT NOW();
-  `);
+  await pool.query(`ALTER TABLE shortcut_readings ADD COLUMN IF NOT EXISTS id BIGINT;`);
+  await pool.query(`ALTER TABLE shortcut_readings ADD COLUMN IF NOT EXISTS entry_time TIMESTAMP DEFAULT NOW();`);
 
   await pool.query(`
     DO $$
     BEGIN
       IF NOT EXISTS (
-        SELECT 1
-        FROM pg_class
-        WHERE relkind = 'S'
-          AND relname = 'shortcut_readings_id_seq'
+        SELECT 1 FROM pg_class
+        WHERE relkind = 'S' AND relname = 'shortcut_readings_id_seq'
       ) THEN
         CREATE SEQUENCE shortcut_readings_id_seq;
       END IF;
@@ -224,21 +186,9 @@ async function initDb() {
     $$;
   `);
 
-  await pool.query(`
-    ALTER SEQUENCE shortcut_readings_id_seq OWNED BY shortcut_readings.id;
-  `);
-
-  await pool.query(`
-    ALTER TABLE shortcut_readings
-    ALTER COLUMN id SET DEFAULT nextval('shortcut_readings_id_seq');
-  `);
-
-  await pool.query(`
-    UPDATE shortcut_readings
-    SET id = nextval('shortcut_readings_id_seq')
-    WHERE id IS NULL;
-  `);
-
+  await pool.query(`ALTER SEQUENCE shortcut_readings_id_seq OWNED BY shortcut_readings.id;`);
+  await pool.query(`ALTER TABLE shortcut_readings ALTER COLUMN id SET DEFAULT nextval('shortcut_readings_id_seq');`);
+  await pool.query(`UPDATE shortcut_readings SET id = nextval('shortcut_readings_id_seq') WHERE id IS NULL;`);
   await pool.query(`
     SELECT setval(
       'shortcut_readings_id_seq',
@@ -251,9 +201,7 @@ async function initDb() {
     DO $$
     BEGIN
       IF EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'shortcut_readings_pkey'
+        SELECT 1 FROM pg_constraint WHERE conname = 'shortcut_readings_pkey'
       ) THEN
         ALTER TABLE shortcut_readings DROP CONSTRAINT shortcut_readings_pkey;
       END IF;
@@ -261,18 +209,13 @@ async function initDb() {
     $$;
   `);
 
-  await pool.query(`
-    ALTER TABLE shortcut_readings
-    ALTER COLUMN id SET NOT NULL;
-  `);
+  await pool.query(`ALTER TABLE shortcut_readings ALTER COLUMN id SET NOT NULL;`);
 
   await pool.query(`
     DO $$
     BEGIN
       IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'shortcut_readings_id_pkey'
+        SELECT 1 FROM pg_constraint WHERE conname = 'shortcut_readings_id_pkey'
       ) THEN
         ALTER TABLE shortcut_readings ADD PRIMARY KEY (id);
       END IF;
@@ -348,14 +291,8 @@ app.post('/api/signup', async (req, res) => {
     const result = await pool.query(
       `
       INSERT INTO users (
-        id,
-        username,
-        password_hash,
-        auth_token,
-        is_paid,
-        is_owner,
-        created_at,
-        updated_at
+        id, username, password_hash, auth_token,
+        is_paid, is_owner, created_at, updated_at
       )
       VALUES ($1, $2, $3, $4, FALSE, FALSE, NOW(), NOW())
       RETURNING id, username, auth_token, is_paid, is_owner, created_at, updated_at
@@ -365,11 +302,7 @@ app.post('/api/signup', async (req, res) => {
 
     const user = sanitizeUser(result.rows[0]);
 
-    return res.json({
-      ok: true,
-      token,
-      user
-    });
+    return res.json({ ok: true, token, user });
   } catch (err) {
     console.error('Signup error:', err);
     return res.status(500).json({ message: 'Signup failed', detail: err.message });
@@ -402,9 +335,7 @@ app.post('/api/login', async (req, res) => {
     const user = result.rows[0];
 
     if (!user.password_hash) {
-      return res.status(400).json({
-        message: 'This account does not have a password set yet'
-      });
+      return res.status(400).json({ message: 'This account does not have a password set yet' });
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
@@ -416,21 +347,14 @@ app.post('/api/login', async (req, res) => {
     const token = makeToken();
 
     await pool.query(
-      `
-      UPDATE users
-      SET auth_token = $1, updated_at = NOW()
-      WHERE id = $2
-      `,
+      `UPDATE users SET auth_token = $1, updated_at = NOW() WHERE id = $2`,
       [token, user.id]
     );
 
     return res.json({
       ok: true,
       token,
-      user: sanitizeUser({
-        ...user,
-        updated_at: new Date()
-      })
+      user: sanitizeUser({ ...user, updated_at: new Date() })
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -441,11 +365,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/logout', requireAuth, async (req, res) => {
   try {
     await pool.query(
-      `
-      UPDATE users
-      SET auth_token = NULL, updated_at = NOW()
-      WHERE id = $1
-      `,
+      `UPDATE users SET auth_token = NULL, updated_at = NOW() WHERE id = $1`,
       [req.user.id]
     );
 
@@ -460,9 +380,28 @@ app.get('/api/me', requireAuth, async (req, res) => {
   return res.json({ ok: true, user: req.user });
 });
 
+// NEW: delete account and all synced data
+app.delete('/api/account', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`DELETE FROM user_data WHERE user_id = $1`, [req.user.id]);
+    await client.query(`DELETE FROM shortcut_readings WHERE user_id = $1`, [req.user.id]);
+    await client.query(`DELETE FROM users WHERE id = $1`, [req.user.id]);
+
+    await client.query('COMMIT');
+    return res.json({ ok: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Delete account error:', err);
+    return res.status(500).json({ message: 'Delete account failed', detail: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 // ---------- SHORTCUT ROUTE ----------
-// Apple Shortcuts should send x-access-token in headers.
-// user_id is no longer accepted from the request body.
 app.post('/shortcut', requireAuth, async (req, res) => {
   console.log('SHORTCUT BODY:', JSON.stringify(req.body, null, 2));
 
@@ -499,28 +438,17 @@ app.post('/shortcut', requireAuth, async (req, res) => {
 
     return res.json({
       ok: true,
-      saved: {
-        user_id: userId,
-        date: safeDate,
-        hrv: hrvNum,
-        hr: hrNum,
-        sleep: sleepNum
-      }
+      saved: { user_id: userId, date: safeDate, hrv: hrvNum, hr: hrNum, sleep: sleepNum }
     });
   } catch (err) {
     console.error('Shortcut error full:', err);
-    return res.status(500).json({
-      message: 'Server error',
-      detail: err.message
-    });
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
 // ---------- USER DATA ----------
 app.get('/api/data', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const result = await pool.query(
       `
       SELECT id, key, value, created_at
@@ -528,7 +456,7 @@ app.get('/api/data', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [userId]
+      [req.user.id]
     );
 
     return res.json(result.rows);
@@ -540,7 +468,6 @@ app.get('/api/data', requireAuth, async (req, res) => {
 
 app.post('/api/data', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
     const updates = req.body;
 
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
@@ -549,11 +476,8 @@ app.post('/api/data', requireAuth, async (req, res) => {
 
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(
-        `
-        INSERT INTO user_data (user_id, key, value)
-        VALUES ($1, $2, $3)
-        `,
-        [userId, key, JSON.stringify(value)]
+        `INSERT INTO user_data (user_id, key, value) VALUES ($1, $2, $3)`,
+        [req.user.id, key, JSON.stringify(value)]
       );
     }
 
@@ -567,8 +491,6 @@ app.post('/api/data', requireAuth, async (req, res) => {
 // ---------- HISTORY ----------
 app.get('/history', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const readingsResult = await pool.query(
       `
       SELECT *
@@ -576,7 +498,7 @@ app.get('/history', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY date DESC, entry_time DESC
       `,
-      [userId]
+      [req.user.id]
     );
 
     const logsResult = await pool.query(
@@ -586,7 +508,7 @@ app.get('/history', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [userId]
+      [req.user.id]
     );
 
     return res.json({
