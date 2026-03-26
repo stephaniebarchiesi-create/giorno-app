@@ -6787,6 +6787,475 @@ window.addEventListener('load',()=>setTimeout(update,300));
 })();
 </script>
 
+
+<style>
+/* ===== Premium dashboard / Giorno differentiators ===== */
+.giorno-premium-wrap{
+  display:grid;
+  gap:14px;
+  margin-bottom:14px;
+}
+.giorno-hero-card{
+  background:
+    radial-gradient(circle at top right, rgba(123,111,160,0.12), transparent 32%),
+    linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px 20px;
+  box-shadow: 0 10px 28px rgba(45,40,32,0.06);
+}
+.giorno-hero-kicker{
+  font-size:11px;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-hero-title{
+  font-family:'Lora', serif;
+  font-size:22px;
+  line-height:1.35;
+  color:var(--text);
+  margin-bottom:10px;
+}
+.giorno-hero-body{
+  font-size:14px;
+  line-height:1.8;
+  color:var(--text2);
+}
+.giorno-grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.giorno-metric-card{
+  background:linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px 14px;
+  box-shadow: 0 8px 22px rgba(45,40,32,0.04);
+}
+.giorno-metric-label{
+  font-size:11px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-metric-value{
+  font-family:'Lora', serif;
+  font-size:26px;
+  line-height:1;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.giorno-metric-sub{
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text2);
+}
+.giorno-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:6px 11px;
+  font-size:11px;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.giorno-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-pill.red{background:#f4dddd;color:#8b2513;}
+.giorno-pill.neutral{background:var(--bg2);color:var(--text2);}
+.giorno-note{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--text2);
+}
+.giorno-soft-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.giorno-soft-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--bg3);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--text2);
+}
+.giorno-soft-item:last-child{border-bottom:none;}
+.giorno-soft-item strong{color:var(--text);}
+.giorno-export-btn{
+  width:100%;
+  padding:16px 18px;
+  border-radius:16px;
+  border:none;
+  background:var(--text);
+  color:var(--bg);
+  font-size:14px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.giorno-export-btn:hover{opacity:.88;}
+.giorno-mini-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.giorno-mini-btn{
+  padding:12px 14px;
+  border-radius:14px;
+  border:1.5px solid var(--border);
+  background:transparent;
+  color:var(--text2);
+  font-size:12px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+}
+.giorno-mini-btn:hover{background:var(--bg2);}
+#gDoctorModalOverlay{
+  position:fixed; inset:0; background:rgba(45,40,32,.42);
+  display:none; align-items:flex-end; justify-content:center; z-index:9998;
+}
+#gDoctorModalOverlay.open{display:flex;}
+#gDoctorModal{
+  background:var(--card); width:100%; max-width:480px; max-height:88vh; overflow:auto;
+  border-radius:22px 22px 0 0; padding:24px 20px 36px;
+}
+.gdoctor-header{
+  display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;
+}
+.gdoctor-title{
+  font-family:'Lora', serif; font-size:22px; color:var(--text);
+}
+.gdoctor-sub{
+  font-size:12px; color:var(--text3); margin-top:4px;
+}
+.gdoctor-close{
+  border:none; background:transparent; font-size:24px; line-height:1; color:var(--text3); cursor:pointer;
+}
+.gdoctor-report{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  color:var(--text2);
+}
+.gdoctor-report h3{
+  font-family:'Lora', serif; font-size:17px; color:var(--text); margin:14px 0 8px;
+}
+.gdoctor-report h3:first-child{margin-top:0;}
+.gdoctor-report p, .gdoctor-report li{
+  font-size:13px; line-height:1.75;
+}
+.gdoctor-report ul{padding-left:18px;}
+.gdoctor-report strong{color:var(--text);}
+.gdoctor-actions{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;
+}
+@media (max-width: 420px){
+  .giorno-grid-2{grid-template-columns:1fr;}
+}
+@media print{
+  body.print-doctor-report *{visibility:hidden !important;}
+  body.print-doctor-report #gDoctorModalOverlay,
+  body.print-doctor-report #gDoctorModalOverlay *{visibility:visible !important;}
+  body.print-doctor-report #gDoctorModalOverlay{
+    display:block !important; position:absolute !important; inset:0 !important; background:white !important;
+  }
+  body.print-doctor-report #gDoctorModal{
+    max-width:none !important; max-height:none !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important; background:white !important;
+  }
+  body.print-doctor-report .gdoctor-close,
+  body.print-doctor-report .gdoctor-actions{display:none !important;}
+}
+</style>
+
+<div id="gDoctorModalOverlay">
+  <div id="gDoctorModal">
+    <div class="gdoctor-header">
+      <div>
+        <div class="gdoctor-title">Doctor summary</div>
+        <div class="gdoctor-sub">A plain-language summary built from your recent Giorno logs.</div>
+      </div>
+      <button id="gDoctorClose" class="gdoctor-close" type="button">×</button>
+    </div>
+    <div id="gDoctorReport" class="gdoctor-report"></div>
+    <div class="gdoctor-actions">
+      <button id="gDoctorCopy" class="giorno-mini-btn" type="button">Copy summary</button>
+      <button id="gDoctorPrint" class="giorno-export-btn" type="button" style="padding:12px 14px;">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function g(id){ return document.getElementById(id); }
+  function n(v){ const x=Number(v); return Number.isFinite(x)?x:null; }
+  function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+  function logs(days){
+    const arr = Array.isArray(window.logs) ? window.logs : [];
+    return days ? arr.slice(-days) : arr.slice();
+  }
+  function today(){
+    return logs(1)[0] || null;
+  }
+  function baseline(field, days=14){
+    const vals = logs(days).map(l => n(l?.[field] ?? l?.[field === 'restingHR' ? 'hr' : field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBase(symptom, days=14){
+    const vals = logs(days).map(l => n(l?.symptoms?.[symptom])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function fmt(v, digits=1){
+    const x = n(v);
+    return x === null ? '—' : x.toFixed(digits);
+  }
+  function statusForHRV(v){
+    const value = n(v);
+    const base = baseline('hrv');
+    if(value === null) return {pill:'neutral', label:'No HRV', text:'No HRV logged yet.'};
+    if(base !== null){
+      if(value < base * 0.85) return {pill:'red', label:'Lower than usual', text:'HRV is lower than your personal baseline.'};
+      if(value > base * 1.15) return {pill:'green', label:'Stronger than usual', text:'HRV is stronger than your usual range.'};
+      return {pill:'amber', label:'Near your normal', text:'HRV is close to your usual pattern.'};
+    }
+    if(value < 30) return {pill:'red', label:'Lower day', text:'HRV is on the lower side compared with general ranges.'};
+    if(value > 70) return {pill:'green', label:'Higher day', text:'HRV is on the higher side compared with general ranges.'};
+    return {pill:'amber', label:'Mid range', text:'HRV is in a middle range compared with general averages.'};
+  }
+  function statusForCrash(){
+    const t = today();
+    if(!t) return {pill:'neutral', label:'No signal yet', why:'Log more days and Giorno will get more specific about what usually comes before harder days.'};
+
+    const reasons = [];
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const energy = n(t.energy);
+    const fatigue = n(t?.symptoms?.fatigue);
+    const dizziness = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness);
+
+    if(hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is below your usual');
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is above your usual');
+    if(sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if(energy !== null && energy <= 2) reasons.push('energy is already low');
+    if(fatigue !== null && fatigue >= 3) reasons.push('fatigue is elevated');
+    if(dizziness !== null && dizziness >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if(reasons.length >= 4) return {pill:'red', label:'Higher strain', why:'Today may feel harder because ' + reasons.join(', ') + '.'};
+    if(reasons.length >= 2) return {pill:'amber', label:'Watch today', why:'There are a few things worth watching: ' + reasons.join(', ') + '.'};
+    return {pill:'green', label:'Lower strain', why: reasons.length ? 'A mild signal is present: ' + reasons.join(', ') + '.' : 'Nothing major is standing out as a warning pattern right now.'};
+  }
+  function explainToday(){
+    const t = today();
+    if(!t) return 'Start logging and Giorno will begin turning your data into calmer, more useful insights.';
+    const parts = [];
+    const e = n(t.energy), eBase = baseline('energy');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const fatigue = n(t?.symptoms?.fatigue), dizzy = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness), headache = n(t?.symptoms?.headache);
+
+    if(e !== null){
+      if(e <= 2) parts.push('This looks like a harder day for you.');
+      else if(eBase !== null && e > eBase) parts.push('You seem to have a little more energy than your recent average.');
+      else if(eBase !== null && e < eBase) parts.push('Your energy looks a bit lower than your recent pattern.');
+    }
+    if(sleep !== null && sleepBase !== null){
+      if(sleep < sleepBase * 0.85) parts.push('Sleep was shorter than your usual, which may be affecting today.');
+      else if(sleep > sleepBase * 1.15) parts.push('You got a bit more sleep than usual.');
+    }
+    if(hrv !== null && hrvBase !== null){
+      if(hrv < hrvBase * 0.85) parts.push('HRV is lower than your normal range.');
+      else if(hrv > hrvBase * 1.15) parts.push('HRV looks a little stronger than your usual.');
+    }
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) parts.push('Resting heart rate is running higher than your usual.');
+    if(fatigue !== null && fatigue >= 3) parts.push('Fatigue is already elevated.');
+    if(dizzy !== null && dizzy >= 3) parts.push('Dizziness is high enough today that it may help to take things gently.');
+    if(headache !== null && headache >= 3) parts.push('Headache symptoms also look significant today.');
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+  function buildPatterns(){
+    const arr = logs(14);
+    if(arr.length < 5) return ['Log a few more days and Giorno will start surfacing stronger patterns here.'];
+    const hard = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2);
+    const out = [];
+    if(hard.length >= 3) out.push('You’ve had several lower-energy days recently.');
+    if(hard.filter(l => n(l.sleepHours) !== null && n(l.sleepHours) < 6).length >= 2) out.push('Short sleep often shows up on your harder days.');
+    const hrvBase = baseline('hrv');
+    if(hard.filter(l => n(l.hrv) !== null && hrvBase !== null && n(l.hrv) < hrvBase * 0.9).length >= 2) out.push('Lower HRV tends to appear before or on rougher days for you.');
+    if(hard.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length >= 2) out.push('Headache flares are worth comparing against food, hydration, and sleep.');
+    if(!out.length) out.push('Nothing consistent is standing out yet — which is still useful information.');
+    return out;
+  }
+  function weekSummary(){
+    const arr = logs(7);
+    if(arr.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here.';
+    const lowDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const parts = [];
+    parts.push(lowDays >= 3 ? `This week has felt heavier than usual, with ${lowDays} lower-energy days.` : 'This week looks relatively steadier overall.');
+    if(avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if(avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)} compared with your recent pattern.`);
+    if(avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+    return parts.join(' ');
+  }
+  function injectPremiumDashboard(){
+    const dash = g('section-dashboard');
+    if(!dash) return;
+    const existing = g('giornoPremiumWrap');
+    if(existing) existing.remove();
+
+    const hrv = statusForHRV(today()?.hrv);
+    const crash = statusForCrash();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'giornoPremiumWrap';
+    wrap.className = 'giorno-premium-wrap';
+    wrap.innerHTML = `
+      <div class="giorno-hero-card">
+        <div class="giorno-hero-kicker">Today, in plain language</div>
+        <div class="giorno-hero-title">Giorno is watching for the shape of your day — not just raw numbers.</div>
+        <div id="giornoPremiumNarrative" class="giorno-hero-body"></div>
+      </div>
+
+      <div class="giorno-grid-2">
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">HRV</div>
+          <div class="giorno-pill ${hrv.pill}">${hrv.label}</div>
+          <div class="giorno-metric-value">${fmt(today()?.hrv)}</div>
+          <div class="giorno-metric-sub">${hrv.text}</div>
+        </div>
+
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">Crash flag</div>
+          <div class="giorno-pill ${crash.pill}">${crash.label}</div>
+          <div class="giorno-metric-value">${crash.pill === 'red' ? '↑' : crash.pill === 'amber' ? '•' : '↓'}</div>
+          <div class="giorno-metric-sub">${crash.why}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Patterns Giorno is noticing</div>
+        <div id="giornoPremiumPatterns" class="giorno-soft-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Explain my week</div>
+        <div id="giornoPremiumWeek" class="giorno-note"></div>
+        <div class="giorno-mini-actions">
+          <button id="giornoDoctorSummaryBtn" class="giorno-mini-btn" type="button">Doctor summary</button>
+          <button id="giornoDoctorCopyShortBtn" class="giorno-mini-btn" type="button">Copy summary</button>
+        </div>
+      </div>
+    `;
+    dash.prepend(wrap);
+
+    g('giornoPremiumNarrative').textContent = explainToday();
+    g('giornoPremiumPatterns').innerHTML = buildPatterns().map(x => `<div class="giorno-soft-item">${x}</div>`).join('');
+    g('giornoPremiumWeek').textContent = weekSummary();
+
+    g('giornoDoctorSummaryBtn')?.addEventListener('click', openDoctorModal);
+    g('giornoDoctorCopyShortBtn')?.addEventListener('click', copyDoctorSummary);
+  }
+  function doctorSummaryHtml(){
+    const arr = logs(30);
+    const t = today();
+    if(!arr.length){
+      return `<h3>Summary</h3><p>Not enough data yet. Log a few days first.</p>`;
+    }
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(arr.map(l => n(l.restingHR ?? l.hr)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const lowEnergyDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const fatigueDays = arr.filter(l => n(l?.symptoms?.fatigue) !== null && n(l?.symptoms?.fatigue) >= 3).length;
+    const headacheDays = arr.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length;
+    const dizzinessDays = arr.filter(l => n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) !== null && n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) >= 3).length;
+    const patterns = buildPatterns();
+    return `
+      <h3>Plain-language summary</h3>
+      <p>Over the last <strong>${arr.length} logged days</strong>, Giorno shows <strong>${lowEnergyDays}</strong> lower-energy days, with average energy around <strong>${fmt(avgEnergy)}</strong> / 5. Average sleep was <strong>${fmt(avgSleep)} hours</strong>, average HRV was <strong>${fmt(avgHRV)}</strong>, and average resting heart rate was <strong>${avgHR === null ? '—' : avgHR.toFixed(0)}</strong>.</p>
+
+      <h3>Most noticeable symptoms</h3>
+      <ul>
+        <li>Higher-fatigue days: <strong>${fatigueDays}</strong></li>
+        <li>Headache flare days: <strong>${headacheDays}</strong></li>
+        <li>Dizziness / orthostatic symptom days: <strong>${dizzinessDays}</strong></li>
+      </ul>
+
+      <h3>Current day snapshot</h3>
+      <p>${t ? explainToday() : 'No current-day snapshot available.'}</p>
+
+      <h3>Patterns worth noting</h3>
+      <ul>
+        ${patterns.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+
+      <h3>Disclaimer</h3>
+      <p>This summary is for pattern awareness and discussion support. It is not a diagnosis tool.</p>
+    `;
+  }
+  function doctorSummaryText(){
+    const div = document.createElement('div');
+    div.innerHTML = doctorSummaryHtml();
+    return div.textContent.replace(/\n\s+/g, '\n').trim();
+  }
+  function openDoctorModal(){
+    g('gDoctorReport').innerHTML = doctorSummaryHtml();
+    g('gDoctorModalOverlay').classList.add('open');
+  }
+  function closeDoctorModal(){
+    g('gDoctorModalOverlay').classList.remove('open');
+  }
+  function copyDoctorSummary(){
+    const text = doctorSummaryText();
+    navigator.clipboard?.writeText(text).then(function(){
+      if(typeof showToast === 'function') showToast('Doctor summary copied');
+    }).catch(function(){});
+  }
+  function bindDoctorModal(){
+    g('gDoctorClose')?.addEventListener('click', closeDoctorModal);
+    g('gDoctorModalOverlay')?.addEventListener('click', function(e){
+      if(e.target === g('gDoctorModalOverlay')) closeDoctorModal();
+    });
+    g('gDoctorCopy')?.addEventListener('click', copyDoctorSummary);
+    g('gDoctorPrint')?.addEventListener('click', function(){
+      document.body.classList.add('print-doctor-report');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('print-doctor-report'); }, 300);
+    });
+  }
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function(){
+    if(typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    injectPremiumDashboard();
+  };
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function(){
+    const out = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    setTimeout(injectPremiumDashboard, 120);
+    return out;
+  };
+  window.addEventListener('load', function(){
+    bindDoctorModal();
+    setTimeout(injectPremiumDashboard, 350);
+  });
+})();
+</script>
+
 </body></html>`;
 
   const win = window.open('', '_blank');
@@ -7219,6 +7688,475 @@ function update(){
 
 window.addEventListener('load',()=>setTimeout(update,300));
 
+})();
+</script>
+
+
+<style>
+/* ===== Premium dashboard / Giorno differentiators ===== */
+.giorno-premium-wrap{
+  display:grid;
+  gap:14px;
+  margin-bottom:14px;
+}
+.giorno-hero-card{
+  background:
+    radial-gradient(circle at top right, rgba(123,111,160,0.12), transparent 32%),
+    linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px 20px;
+  box-shadow: 0 10px 28px rgba(45,40,32,0.06);
+}
+.giorno-hero-kicker{
+  font-size:11px;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-hero-title{
+  font-family:'Lora', serif;
+  font-size:22px;
+  line-height:1.35;
+  color:var(--text);
+  margin-bottom:10px;
+}
+.giorno-hero-body{
+  font-size:14px;
+  line-height:1.8;
+  color:var(--text2);
+}
+.giorno-grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.giorno-metric-card{
+  background:linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px 14px;
+  box-shadow: 0 8px 22px rgba(45,40,32,0.04);
+}
+.giorno-metric-label{
+  font-size:11px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-metric-value{
+  font-family:'Lora', serif;
+  font-size:26px;
+  line-height:1;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.giorno-metric-sub{
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text2);
+}
+.giorno-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:6px 11px;
+  font-size:11px;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.giorno-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-pill.red{background:#f4dddd;color:#8b2513;}
+.giorno-pill.neutral{background:var(--bg2);color:var(--text2);}
+.giorno-note{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--text2);
+}
+.giorno-soft-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.giorno-soft-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--bg3);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--text2);
+}
+.giorno-soft-item:last-child{border-bottom:none;}
+.giorno-soft-item strong{color:var(--text);}
+.giorno-export-btn{
+  width:100%;
+  padding:16px 18px;
+  border-radius:16px;
+  border:none;
+  background:var(--text);
+  color:var(--bg);
+  font-size:14px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.giorno-export-btn:hover{opacity:.88;}
+.giorno-mini-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.giorno-mini-btn{
+  padding:12px 14px;
+  border-radius:14px;
+  border:1.5px solid var(--border);
+  background:transparent;
+  color:var(--text2);
+  font-size:12px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+}
+.giorno-mini-btn:hover{background:var(--bg2);}
+#gDoctorModalOverlay{
+  position:fixed; inset:0; background:rgba(45,40,32,.42);
+  display:none; align-items:flex-end; justify-content:center; z-index:9998;
+}
+#gDoctorModalOverlay.open{display:flex;}
+#gDoctorModal{
+  background:var(--card); width:100%; max-width:480px; max-height:88vh; overflow:auto;
+  border-radius:22px 22px 0 0; padding:24px 20px 36px;
+}
+.gdoctor-header{
+  display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;
+}
+.gdoctor-title{
+  font-family:'Lora', serif; font-size:22px; color:var(--text);
+}
+.gdoctor-sub{
+  font-size:12px; color:var(--text3); margin-top:4px;
+}
+.gdoctor-close{
+  border:none; background:transparent; font-size:24px; line-height:1; color:var(--text3); cursor:pointer;
+}
+.gdoctor-report{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  color:var(--text2);
+}
+.gdoctor-report h3{
+  font-family:'Lora', serif; font-size:17px; color:var(--text); margin:14px 0 8px;
+}
+.gdoctor-report h3:first-child{margin-top:0;}
+.gdoctor-report p, .gdoctor-report li{
+  font-size:13px; line-height:1.75;
+}
+.gdoctor-report ul{padding-left:18px;}
+.gdoctor-report strong{color:var(--text);}
+.gdoctor-actions{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;
+}
+@media (max-width: 420px){
+  .giorno-grid-2{grid-template-columns:1fr;}
+}
+@media print{
+  body.print-doctor-report *{visibility:hidden !important;}
+  body.print-doctor-report #gDoctorModalOverlay,
+  body.print-doctor-report #gDoctorModalOverlay *{visibility:visible !important;}
+  body.print-doctor-report #gDoctorModalOverlay{
+    display:block !important; position:absolute !important; inset:0 !important; background:white !important;
+  }
+  body.print-doctor-report #gDoctorModal{
+    max-width:none !important; max-height:none !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important; background:white !important;
+  }
+  body.print-doctor-report .gdoctor-close,
+  body.print-doctor-report .gdoctor-actions{display:none !important;}
+}
+</style>
+
+<div id="gDoctorModalOverlay">
+  <div id="gDoctorModal">
+    <div class="gdoctor-header">
+      <div>
+        <div class="gdoctor-title">Doctor summary</div>
+        <div class="gdoctor-sub">A plain-language summary built from your recent Giorno logs.</div>
+      </div>
+      <button id="gDoctorClose" class="gdoctor-close" type="button">×</button>
+    </div>
+    <div id="gDoctorReport" class="gdoctor-report"></div>
+    <div class="gdoctor-actions">
+      <button id="gDoctorCopy" class="giorno-mini-btn" type="button">Copy summary</button>
+      <button id="gDoctorPrint" class="giorno-export-btn" type="button" style="padding:12px 14px;">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function g(id){ return document.getElementById(id); }
+  function n(v){ const x=Number(v); return Number.isFinite(x)?x:null; }
+  function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+  function logs(days){
+    const arr = Array.isArray(window.logs) ? window.logs : [];
+    return days ? arr.slice(-days) : arr.slice();
+  }
+  function today(){
+    return logs(1)[0] || null;
+  }
+  function baseline(field, days=14){
+    const vals = logs(days).map(l => n(l?.[field] ?? l?.[field === 'restingHR' ? 'hr' : field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBase(symptom, days=14){
+    const vals = logs(days).map(l => n(l?.symptoms?.[symptom])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function fmt(v, digits=1){
+    const x = n(v);
+    return x === null ? '—' : x.toFixed(digits);
+  }
+  function statusForHRV(v){
+    const value = n(v);
+    const base = baseline('hrv');
+    if(value === null) return {pill:'neutral', label:'No HRV', text:'No HRV logged yet.'};
+    if(base !== null){
+      if(value < base * 0.85) return {pill:'red', label:'Lower than usual', text:'HRV is lower than your personal baseline.'};
+      if(value > base * 1.15) return {pill:'green', label:'Stronger than usual', text:'HRV is stronger than your usual range.'};
+      return {pill:'amber', label:'Near your normal', text:'HRV is close to your usual pattern.'};
+    }
+    if(value < 30) return {pill:'red', label:'Lower day', text:'HRV is on the lower side compared with general ranges.'};
+    if(value > 70) return {pill:'green', label:'Higher day', text:'HRV is on the higher side compared with general ranges.'};
+    return {pill:'amber', label:'Mid range', text:'HRV is in a middle range compared with general averages.'};
+  }
+  function statusForCrash(){
+    const t = today();
+    if(!t) return {pill:'neutral', label:'No signal yet', why:'Log more days and Giorno will get more specific about what usually comes before harder days.'};
+
+    const reasons = [];
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const energy = n(t.energy);
+    const fatigue = n(t?.symptoms?.fatigue);
+    const dizziness = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness);
+
+    if(hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is below your usual');
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is above your usual');
+    if(sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if(energy !== null && energy <= 2) reasons.push('energy is already low');
+    if(fatigue !== null && fatigue >= 3) reasons.push('fatigue is elevated');
+    if(dizziness !== null && dizziness >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if(reasons.length >= 4) return {pill:'red', label:'Higher strain', why:'Today may feel harder because ' + reasons.join(', ') + '.'};
+    if(reasons.length >= 2) return {pill:'amber', label:'Watch today', why:'There are a few things worth watching: ' + reasons.join(', ') + '.'};
+    return {pill:'green', label:'Lower strain', why: reasons.length ? 'A mild signal is present: ' + reasons.join(', ') + '.' : 'Nothing major is standing out as a warning pattern right now.'};
+  }
+  function explainToday(){
+    const t = today();
+    if(!t) return 'Start logging and Giorno will begin turning your data into calmer, more useful insights.';
+    const parts = [];
+    const e = n(t.energy), eBase = baseline('energy');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const fatigue = n(t?.symptoms?.fatigue), dizzy = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness), headache = n(t?.symptoms?.headache);
+
+    if(e !== null){
+      if(e <= 2) parts.push('This looks like a harder day for you.');
+      else if(eBase !== null && e > eBase) parts.push('You seem to have a little more energy than your recent average.');
+      else if(eBase !== null && e < eBase) parts.push('Your energy looks a bit lower than your recent pattern.');
+    }
+    if(sleep !== null && sleepBase !== null){
+      if(sleep < sleepBase * 0.85) parts.push('Sleep was shorter than your usual, which may be affecting today.');
+      else if(sleep > sleepBase * 1.15) parts.push('You got a bit more sleep than usual.');
+    }
+    if(hrv !== null && hrvBase !== null){
+      if(hrv < hrvBase * 0.85) parts.push('HRV is lower than your normal range.');
+      else if(hrv > hrvBase * 1.15) parts.push('HRV looks a little stronger than your usual.');
+    }
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) parts.push('Resting heart rate is running higher than your usual.');
+    if(fatigue !== null && fatigue >= 3) parts.push('Fatigue is already elevated.');
+    if(dizzy !== null && dizzy >= 3) parts.push('Dizziness is high enough today that it may help to take things gently.');
+    if(headache !== null && headache >= 3) parts.push('Headache symptoms also look significant today.');
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+  function buildPatterns(){
+    const arr = logs(14);
+    if(arr.length < 5) return ['Log a few more days and Giorno will start surfacing stronger patterns here.'];
+    const hard = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2);
+    const out = [];
+    if(hard.length >= 3) out.push('You’ve had several lower-energy days recently.');
+    if(hard.filter(l => n(l.sleepHours) !== null && n(l.sleepHours) < 6).length >= 2) out.push('Short sleep often shows up on your harder days.');
+    const hrvBase = baseline('hrv');
+    if(hard.filter(l => n(l.hrv) !== null && hrvBase !== null && n(l.hrv) < hrvBase * 0.9).length >= 2) out.push('Lower HRV tends to appear before or on rougher days for you.');
+    if(hard.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length >= 2) out.push('Headache flares are worth comparing against food, hydration, and sleep.');
+    if(!out.length) out.push('Nothing consistent is standing out yet — which is still useful information.');
+    return out;
+  }
+  function weekSummary(){
+    const arr = logs(7);
+    if(arr.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here.';
+    const lowDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const parts = [];
+    parts.push(lowDays >= 3 ? `This week has felt heavier than usual, with ${lowDays} lower-energy days.` : 'This week looks relatively steadier overall.');
+    if(avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if(avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)} compared with your recent pattern.`);
+    if(avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+    return parts.join(' ');
+  }
+  function injectPremiumDashboard(){
+    const dash = g('section-dashboard');
+    if(!dash) return;
+    const existing = g('giornoPremiumWrap');
+    if(existing) existing.remove();
+
+    const hrv = statusForHRV(today()?.hrv);
+    const crash = statusForCrash();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'giornoPremiumWrap';
+    wrap.className = 'giorno-premium-wrap';
+    wrap.innerHTML = `
+      <div class="giorno-hero-card">
+        <div class="giorno-hero-kicker">Today, in plain language</div>
+        <div class="giorno-hero-title">Giorno is watching for the shape of your day — not just raw numbers.</div>
+        <div id="giornoPremiumNarrative" class="giorno-hero-body"></div>
+      </div>
+
+      <div class="giorno-grid-2">
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">HRV</div>
+          <div class="giorno-pill ${hrv.pill}">${hrv.label}</div>
+          <div class="giorno-metric-value">${fmt(today()?.hrv)}</div>
+          <div class="giorno-metric-sub">${hrv.text}</div>
+        </div>
+
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">Crash flag</div>
+          <div class="giorno-pill ${crash.pill}">${crash.label}</div>
+          <div class="giorno-metric-value">${crash.pill === 'red' ? '↑' : crash.pill === 'amber' ? '•' : '↓'}</div>
+          <div class="giorno-metric-sub">${crash.why}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Patterns Giorno is noticing</div>
+        <div id="giornoPremiumPatterns" class="giorno-soft-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Explain my week</div>
+        <div id="giornoPremiumWeek" class="giorno-note"></div>
+        <div class="giorno-mini-actions">
+          <button id="giornoDoctorSummaryBtn" class="giorno-mini-btn" type="button">Doctor summary</button>
+          <button id="giornoDoctorCopyShortBtn" class="giorno-mini-btn" type="button">Copy summary</button>
+        </div>
+      </div>
+    `;
+    dash.prepend(wrap);
+
+    g('giornoPremiumNarrative').textContent = explainToday();
+    g('giornoPremiumPatterns').innerHTML = buildPatterns().map(x => `<div class="giorno-soft-item">${x}</div>`).join('');
+    g('giornoPremiumWeek').textContent = weekSummary();
+
+    g('giornoDoctorSummaryBtn')?.addEventListener('click', openDoctorModal);
+    g('giornoDoctorCopyShortBtn')?.addEventListener('click', copyDoctorSummary);
+  }
+  function doctorSummaryHtml(){
+    const arr = logs(30);
+    const t = today();
+    if(!arr.length){
+      return `<h3>Summary</h3><p>Not enough data yet. Log a few days first.</p>`;
+    }
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(arr.map(l => n(l.restingHR ?? l.hr)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const lowEnergyDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const fatigueDays = arr.filter(l => n(l?.symptoms?.fatigue) !== null && n(l?.symptoms?.fatigue) >= 3).length;
+    const headacheDays = arr.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length;
+    const dizzinessDays = arr.filter(l => n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) !== null && n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) >= 3).length;
+    const patterns = buildPatterns();
+    return `
+      <h3>Plain-language summary</h3>
+      <p>Over the last <strong>${arr.length} logged days</strong>, Giorno shows <strong>${lowEnergyDays}</strong> lower-energy days, with average energy around <strong>${fmt(avgEnergy)}</strong> / 5. Average sleep was <strong>${fmt(avgSleep)} hours</strong>, average HRV was <strong>${fmt(avgHRV)}</strong>, and average resting heart rate was <strong>${avgHR === null ? '—' : avgHR.toFixed(0)}</strong>.</p>
+
+      <h3>Most noticeable symptoms</h3>
+      <ul>
+        <li>Higher-fatigue days: <strong>${fatigueDays}</strong></li>
+        <li>Headache flare days: <strong>${headacheDays}</strong></li>
+        <li>Dizziness / orthostatic symptom days: <strong>${dizzinessDays}</strong></li>
+      </ul>
+
+      <h3>Current day snapshot</h3>
+      <p>${t ? explainToday() : 'No current-day snapshot available.'}</p>
+
+      <h3>Patterns worth noting</h3>
+      <ul>
+        ${patterns.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+
+      <h3>Disclaimer</h3>
+      <p>This summary is for pattern awareness and discussion support. It is not a diagnosis tool.</p>
+    `;
+  }
+  function doctorSummaryText(){
+    const div = document.createElement('div');
+    div.innerHTML = doctorSummaryHtml();
+    return div.textContent.replace(/\n\s+/g, '\n').trim();
+  }
+  function openDoctorModal(){
+    g('gDoctorReport').innerHTML = doctorSummaryHtml();
+    g('gDoctorModalOverlay').classList.add('open');
+  }
+  function closeDoctorModal(){
+    g('gDoctorModalOverlay').classList.remove('open');
+  }
+  function copyDoctorSummary(){
+    const text = doctorSummaryText();
+    navigator.clipboard?.writeText(text).then(function(){
+      if(typeof showToast === 'function') showToast('Doctor summary copied');
+    }).catch(function(){});
+  }
+  function bindDoctorModal(){
+    g('gDoctorClose')?.addEventListener('click', closeDoctorModal);
+    g('gDoctorModalOverlay')?.addEventListener('click', function(e){
+      if(e.target === g('gDoctorModalOverlay')) closeDoctorModal();
+    });
+    g('gDoctorCopy')?.addEventListener('click', copyDoctorSummary);
+    g('gDoctorPrint')?.addEventListener('click', function(){
+      document.body.classList.add('print-doctor-report');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('print-doctor-report'); }, 300);
+    });
+  }
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function(){
+    if(typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    injectPremiumDashboard();
+  };
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function(){
+    const out = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    setTimeout(injectPremiumDashboard, 120);
+    return out;
+  };
+  window.addEventListener('load', function(){
+    bindDoctorModal();
+    setTimeout(injectPremiumDashboard, 350);
+  });
 })();
 </script>
 
@@ -10480,6 +11418,475 @@ window.addEventListener('load',()=>setTimeout(update,300));
 })();
 </script>
 
+
+<style>
+/* ===== Premium dashboard / Giorno differentiators ===== */
+.giorno-premium-wrap{
+  display:grid;
+  gap:14px;
+  margin-bottom:14px;
+}
+.giorno-hero-card{
+  background:
+    radial-gradient(circle at top right, rgba(123,111,160,0.12), transparent 32%),
+    linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px 20px;
+  box-shadow: 0 10px 28px rgba(45,40,32,0.06);
+}
+.giorno-hero-kicker{
+  font-size:11px;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-hero-title{
+  font-family:'Lora', serif;
+  font-size:22px;
+  line-height:1.35;
+  color:var(--text);
+  margin-bottom:10px;
+}
+.giorno-hero-body{
+  font-size:14px;
+  line-height:1.8;
+  color:var(--text2);
+}
+.giorno-grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.giorno-metric-card{
+  background:linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px 14px;
+  box-shadow: 0 8px 22px rgba(45,40,32,0.04);
+}
+.giorno-metric-label{
+  font-size:11px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-metric-value{
+  font-family:'Lora', serif;
+  font-size:26px;
+  line-height:1;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.giorno-metric-sub{
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text2);
+}
+.giorno-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:6px 11px;
+  font-size:11px;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.giorno-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-pill.red{background:#f4dddd;color:#8b2513;}
+.giorno-pill.neutral{background:var(--bg2);color:var(--text2);}
+.giorno-note{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--text2);
+}
+.giorno-soft-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.giorno-soft-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--bg3);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--text2);
+}
+.giorno-soft-item:last-child{border-bottom:none;}
+.giorno-soft-item strong{color:var(--text);}
+.giorno-export-btn{
+  width:100%;
+  padding:16px 18px;
+  border-radius:16px;
+  border:none;
+  background:var(--text);
+  color:var(--bg);
+  font-size:14px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.giorno-export-btn:hover{opacity:.88;}
+.giorno-mini-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.giorno-mini-btn{
+  padding:12px 14px;
+  border-radius:14px;
+  border:1.5px solid var(--border);
+  background:transparent;
+  color:var(--text2);
+  font-size:12px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+}
+.giorno-mini-btn:hover{background:var(--bg2);}
+#gDoctorModalOverlay{
+  position:fixed; inset:0; background:rgba(45,40,32,.42);
+  display:none; align-items:flex-end; justify-content:center; z-index:9998;
+}
+#gDoctorModalOverlay.open{display:flex;}
+#gDoctorModal{
+  background:var(--card); width:100%; max-width:480px; max-height:88vh; overflow:auto;
+  border-radius:22px 22px 0 0; padding:24px 20px 36px;
+}
+.gdoctor-header{
+  display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;
+}
+.gdoctor-title{
+  font-family:'Lora', serif; font-size:22px; color:var(--text);
+}
+.gdoctor-sub{
+  font-size:12px; color:var(--text3); margin-top:4px;
+}
+.gdoctor-close{
+  border:none; background:transparent; font-size:24px; line-height:1; color:var(--text3); cursor:pointer;
+}
+.gdoctor-report{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  color:var(--text2);
+}
+.gdoctor-report h3{
+  font-family:'Lora', serif; font-size:17px; color:var(--text); margin:14px 0 8px;
+}
+.gdoctor-report h3:first-child{margin-top:0;}
+.gdoctor-report p, .gdoctor-report li{
+  font-size:13px; line-height:1.75;
+}
+.gdoctor-report ul{padding-left:18px;}
+.gdoctor-report strong{color:var(--text);}
+.gdoctor-actions{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;
+}
+@media (max-width: 420px){
+  .giorno-grid-2{grid-template-columns:1fr;}
+}
+@media print{
+  body.print-doctor-report *{visibility:hidden !important;}
+  body.print-doctor-report #gDoctorModalOverlay,
+  body.print-doctor-report #gDoctorModalOverlay *{visibility:visible !important;}
+  body.print-doctor-report #gDoctorModalOverlay{
+    display:block !important; position:absolute !important; inset:0 !important; background:white !important;
+  }
+  body.print-doctor-report #gDoctorModal{
+    max-width:none !important; max-height:none !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important; background:white !important;
+  }
+  body.print-doctor-report .gdoctor-close,
+  body.print-doctor-report .gdoctor-actions{display:none !important;}
+}
+</style>
+
+<div id="gDoctorModalOverlay">
+  <div id="gDoctorModal">
+    <div class="gdoctor-header">
+      <div>
+        <div class="gdoctor-title">Doctor summary</div>
+        <div class="gdoctor-sub">A plain-language summary built from your recent Giorno logs.</div>
+      </div>
+      <button id="gDoctorClose" class="gdoctor-close" type="button">×</button>
+    </div>
+    <div id="gDoctorReport" class="gdoctor-report"></div>
+    <div class="gdoctor-actions">
+      <button id="gDoctorCopy" class="giorno-mini-btn" type="button">Copy summary</button>
+      <button id="gDoctorPrint" class="giorno-export-btn" type="button" style="padding:12px 14px;">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function g(id){ return document.getElementById(id); }
+  function n(v){ const x=Number(v); return Number.isFinite(x)?x:null; }
+  function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+  function logs(days){
+    const arr = Array.isArray(window.logs) ? window.logs : [];
+    return days ? arr.slice(-days) : arr.slice();
+  }
+  function today(){
+    return logs(1)[0] || null;
+  }
+  function baseline(field, days=14){
+    const vals = logs(days).map(l => n(l?.[field] ?? l?.[field === 'restingHR' ? 'hr' : field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBase(symptom, days=14){
+    const vals = logs(days).map(l => n(l?.symptoms?.[symptom])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function fmt(v, digits=1){
+    const x = n(v);
+    return x === null ? '—' : x.toFixed(digits);
+  }
+  function statusForHRV(v){
+    const value = n(v);
+    const base = baseline('hrv');
+    if(value === null) return {pill:'neutral', label:'No HRV', text:'No HRV logged yet.'};
+    if(base !== null){
+      if(value < base * 0.85) return {pill:'red', label:'Lower than usual', text:'HRV is lower than your personal baseline.'};
+      if(value > base * 1.15) return {pill:'green', label:'Stronger than usual', text:'HRV is stronger than your usual range.'};
+      return {pill:'amber', label:'Near your normal', text:'HRV is close to your usual pattern.'};
+    }
+    if(value < 30) return {pill:'red', label:'Lower day', text:'HRV is on the lower side compared with general ranges.'};
+    if(value > 70) return {pill:'green', label:'Higher day', text:'HRV is on the higher side compared with general ranges.'};
+    return {pill:'amber', label:'Mid range', text:'HRV is in a middle range compared with general averages.'};
+  }
+  function statusForCrash(){
+    const t = today();
+    if(!t) return {pill:'neutral', label:'No signal yet', why:'Log more days and Giorno will get more specific about what usually comes before harder days.'};
+
+    const reasons = [];
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const energy = n(t.energy);
+    const fatigue = n(t?.symptoms?.fatigue);
+    const dizziness = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness);
+
+    if(hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is below your usual');
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is above your usual');
+    if(sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if(energy !== null && energy <= 2) reasons.push('energy is already low');
+    if(fatigue !== null && fatigue >= 3) reasons.push('fatigue is elevated');
+    if(dizziness !== null && dizziness >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if(reasons.length >= 4) return {pill:'red', label:'Higher strain', why:'Today may feel harder because ' + reasons.join(', ') + '.'};
+    if(reasons.length >= 2) return {pill:'amber', label:'Watch today', why:'There are a few things worth watching: ' + reasons.join(', ') + '.'};
+    return {pill:'green', label:'Lower strain', why: reasons.length ? 'A mild signal is present: ' + reasons.join(', ') + '.' : 'Nothing major is standing out as a warning pattern right now.'};
+  }
+  function explainToday(){
+    const t = today();
+    if(!t) return 'Start logging and Giorno will begin turning your data into calmer, more useful insights.';
+    const parts = [];
+    const e = n(t.energy), eBase = baseline('energy');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const fatigue = n(t?.symptoms?.fatigue), dizzy = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness), headache = n(t?.symptoms?.headache);
+
+    if(e !== null){
+      if(e <= 2) parts.push('This looks like a harder day for you.');
+      else if(eBase !== null && e > eBase) parts.push('You seem to have a little more energy than your recent average.');
+      else if(eBase !== null && e < eBase) parts.push('Your energy looks a bit lower than your recent pattern.');
+    }
+    if(sleep !== null && sleepBase !== null){
+      if(sleep < sleepBase * 0.85) parts.push('Sleep was shorter than your usual, which may be affecting today.');
+      else if(sleep > sleepBase * 1.15) parts.push('You got a bit more sleep than usual.');
+    }
+    if(hrv !== null && hrvBase !== null){
+      if(hrv < hrvBase * 0.85) parts.push('HRV is lower than your normal range.');
+      else if(hrv > hrvBase * 1.15) parts.push('HRV looks a little stronger than your usual.');
+    }
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) parts.push('Resting heart rate is running higher than your usual.');
+    if(fatigue !== null && fatigue >= 3) parts.push('Fatigue is already elevated.');
+    if(dizzy !== null && dizzy >= 3) parts.push('Dizziness is high enough today that it may help to take things gently.');
+    if(headache !== null && headache >= 3) parts.push('Headache symptoms also look significant today.');
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+  function buildPatterns(){
+    const arr = logs(14);
+    if(arr.length < 5) return ['Log a few more days and Giorno will start surfacing stronger patterns here.'];
+    const hard = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2);
+    const out = [];
+    if(hard.length >= 3) out.push('You’ve had several lower-energy days recently.');
+    if(hard.filter(l => n(l.sleepHours) !== null && n(l.sleepHours) < 6).length >= 2) out.push('Short sleep often shows up on your harder days.');
+    const hrvBase = baseline('hrv');
+    if(hard.filter(l => n(l.hrv) !== null && hrvBase !== null && n(l.hrv) < hrvBase * 0.9).length >= 2) out.push('Lower HRV tends to appear before or on rougher days for you.');
+    if(hard.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length >= 2) out.push('Headache flares are worth comparing against food, hydration, and sleep.');
+    if(!out.length) out.push('Nothing consistent is standing out yet — which is still useful information.');
+    return out;
+  }
+  function weekSummary(){
+    const arr = logs(7);
+    if(arr.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here.';
+    const lowDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const parts = [];
+    parts.push(lowDays >= 3 ? `This week has felt heavier than usual, with ${lowDays} lower-energy days.` : 'This week looks relatively steadier overall.');
+    if(avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if(avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)} compared with your recent pattern.`);
+    if(avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+    return parts.join(' ');
+  }
+  function injectPremiumDashboard(){
+    const dash = g('section-dashboard');
+    if(!dash) return;
+    const existing = g('giornoPremiumWrap');
+    if(existing) existing.remove();
+
+    const hrv = statusForHRV(today()?.hrv);
+    const crash = statusForCrash();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'giornoPremiumWrap';
+    wrap.className = 'giorno-premium-wrap';
+    wrap.innerHTML = `
+      <div class="giorno-hero-card">
+        <div class="giorno-hero-kicker">Today, in plain language</div>
+        <div class="giorno-hero-title">Giorno is watching for the shape of your day — not just raw numbers.</div>
+        <div id="giornoPremiumNarrative" class="giorno-hero-body"></div>
+      </div>
+
+      <div class="giorno-grid-2">
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">HRV</div>
+          <div class="giorno-pill ${hrv.pill}">${hrv.label}</div>
+          <div class="giorno-metric-value">${fmt(today()?.hrv)}</div>
+          <div class="giorno-metric-sub">${hrv.text}</div>
+        </div>
+
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">Crash flag</div>
+          <div class="giorno-pill ${crash.pill}">${crash.label}</div>
+          <div class="giorno-metric-value">${crash.pill === 'red' ? '↑' : crash.pill === 'amber' ? '•' : '↓'}</div>
+          <div class="giorno-metric-sub">${crash.why}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Patterns Giorno is noticing</div>
+        <div id="giornoPremiumPatterns" class="giorno-soft-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Explain my week</div>
+        <div id="giornoPremiumWeek" class="giorno-note"></div>
+        <div class="giorno-mini-actions">
+          <button id="giornoDoctorSummaryBtn" class="giorno-mini-btn" type="button">Doctor summary</button>
+          <button id="giornoDoctorCopyShortBtn" class="giorno-mini-btn" type="button">Copy summary</button>
+        </div>
+      </div>
+    `;
+    dash.prepend(wrap);
+
+    g('giornoPremiumNarrative').textContent = explainToday();
+    g('giornoPremiumPatterns').innerHTML = buildPatterns().map(x => `<div class="giorno-soft-item">${x}</div>`).join('');
+    g('giornoPremiumWeek').textContent = weekSummary();
+
+    g('giornoDoctorSummaryBtn')?.addEventListener('click', openDoctorModal);
+    g('giornoDoctorCopyShortBtn')?.addEventListener('click', copyDoctorSummary);
+  }
+  function doctorSummaryHtml(){
+    const arr = logs(30);
+    const t = today();
+    if(!arr.length){
+      return `<h3>Summary</h3><p>Not enough data yet. Log a few days first.</p>`;
+    }
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(arr.map(l => n(l.restingHR ?? l.hr)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const lowEnergyDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const fatigueDays = arr.filter(l => n(l?.symptoms?.fatigue) !== null && n(l?.symptoms?.fatigue) >= 3).length;
+    const headacheDays = arr.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length;
+    const dizzinessDays = arr.filter(l => n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) !== null && n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) >= 3).length;
+    const patterns = buildPatterns();
+    return `
+      <h3>Plain-language summary</h3>
+      <p>Over the last <strong>${arr.length} logged days</strong>, Giorno shows <strong>${lowEnergyDays}</strong> lower-energy days, with average energy around <strong>${fmt(avgEnergy)}</strong> / 5. Average sleep was <strong>${fmt(avgSleep)} hours</strong>, average HRV was <strong>${fmt(avgHRV)}</strong>, and average resting heart rate was <strong>${avgHR === null ? '—' : avgHR.toFixed(0)}</strong>.</p>
+
+      <h3>Most noticeable symptoms</h3>
+      <ul>
+        <li>Higher-fatigue days: <strong>${fatigueDays}</strong></li>
+        <li>Headache flare days: <strong>${headacheDays}</strong></li>
+        <li>Dizziness / orthostatic symptom days: <strong>${dizzinessDays}</strong></li>
+      </ul>
+
+      <h3>Current day snapshot</h3>
+      <p>${t ? explainToday() : 'No current-day snapshot available.'}</p>
+
+      <h3>Patterns worth noting</h3>
+      <ul>
+        ${patterns.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+
+      <h3>Disclaimer</h3>
+      <p>This summary is for pattern awareness and discussion support. It is not a diagnosis tool.</p>
+    `;
+  }
+  function doctorSummaryText(){
+    const div = document.createElement('div');
+    div.innerHTML = doctorSummaryHtml();
+    return div.textContent.replace(/\n\s+/g, '\n').trim();
+  }
+  function openDoctorModal(){
+    g('gDoctorReport').innerHTML = doctorSummaryHtml();
+    g('gDoctorModalOverlay').classList.add('open');
+  }
+  function closeDoctorModal(){
+    g('gDoctorModalOverlay').classList.remove('open');
+  }
+  function copyDoctorSummary(){
+    const text = doctorSummaryText();
+    navigator.clipboard?.writeText(text).then(function(){
+      if(typeof showToast === 'function') showToast('Doctor summary copied');
+    }).catch(function(){});
+  }
+  function bindDoctorModal(){
+    g('gDoctorClose')?.addEventListener('click', closeDoctorModal);
+    g('gDoctorModalOverlay')?.addEventListener('click', function(e){
+      if(e.target === g('gDoctorModalOverlay')) closeDoctorModal();
+    });
+    g('gDoctorCopy')?.addEventListener('click', copyDoctorSummary);
+    g('gDoctorPrint')?.addEventListener('click', function(){
+      document.body.classList.add('print-doctor-report');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('print-doctor-report'); }, 300);
+    });
+  }
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function(){
+    if(typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    injectPremiumDashboard();
+  };
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function(){
+    const out = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    setTimeout(injectPremiumDashboard, 120);
+    return out;
+  };
+  window.addEventListener('load', function(){
+    bindDoctorModal();
+    setTimeout(injectPremiumDashboard, 350);
+  });
+})();
+</script>
+
 </body></html>`);
   win.document.close();
   win.focus();
@@ -11763,6 +13170,475 @@ function update(){
 
 window.addEventListener('load',()=>setTimeout(update,300));
 
+})();
+</script>
+
+
+<style>
+/* ===== Premium dashboard / Giorno differentiators ===== */
+.giorno-premium-wrap{
+  display:grid;
+  gap:14px;
+  margin-bottom:14px;
+}
+.giorno-hero-card{
+  background:
+    radial-gradient(circle at top right, rgba(123,111,160,0.12), transparent 32%),
+    linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px 20px;
+  box-shadow: 0 10px 28px rgba(45,40,32,0.06);
+}
+.giorno-hero-kicker{
+  font-size:11px;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-hero-title{
+  font-family:'Lora', serif;
+  font-size:22px;
+  line-height:1.35;
+  color:var(--text);
+  margin-bottom:10px;
+}
+.giorno-hero-body{
+  font-size:14px;
+  line-height:1.8;
+  color:var(--text2);
+}
+.giorno-grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.giorno-metric-card{
+  background:linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px 14px;
+  box-shadow: 0 8px 22px rgba(45,40,32,0.04);
+}
+.giorno-metric-label{
+  font-size:11px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:10px;
+}
+.giorno-metric-value{
+  font-family:'Lora', serif;
+  font-size:26px;
+  line-height:1;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.giorno-metric-sub{
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text2);
+}
+.giorno-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:6px 11px;
+  font-size:11px;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.giorno-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-pill.red{background:#f4dddd;color:#8b2513;}
+.giorno-pill.neutral{background:var(--bg2);color:var(--text2);}
+.giorno-note{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--text2);
+}
+.giorno-soft-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.giorno-soft-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--bg3);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--text2);
+}
+.giorno-soft-item:last-child{border-bottom:none;}
+.giorno-soft-item strong{color:var(--text);}
+.giorno-export-btn{
+  width:100%;
+  padding:16px 18px;
+  border-radius:16px;
+  border:none;
+  background:var(--text);
+  color:var(--bg);
+  font-size:14px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.giorno-export-btn:hover{opacity:.88;}
+.giorno-mini-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.giorno-mini-btn{
+  padding:12px 14px;
+  border-radius:14px;
+  border:1.5px solid var(--border);
+  background:transparent;
+  color:var(--text2);
+  font-size:12px;
+  font-family:'DM Sans', sans-serif;
+  cursor:pointer;
+}
+.giorno-mini-btn:hover{background:var(--bg2);}
+#gDoctorModalOverlay{
+  position:fixed; inset:0; background:rgba(45,40,32,.42);
+  display:none; align-items:flex-end; justify-content:center; z-index:9998;
+}
+#gDoctorModalOverlay.open{display:flex;}
+#gDoctorModal{
+  background:var(--card); width:100%; max-width:480px; max-height:88vh; overflow:auto;
+  border-radius:22px 22px 0 0; padding:24px 20px 36px;
+}
+.gdoctor-header{
+  display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:18px;
+}
+.gdoctor-title{
+  font-family:'Lora', serif; font-size:22px; color:var(--text);
+}
+.gdoctor-sub{
+  font-size:12px; color:var(--text3); margin-top:4px;
+}
+.gdoctor-close{
+  border:none; background:transparent; font-size:24px; line-height:1; color:var(--text3); cursor:pointer;
+}
+.gdoctor-report{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  color:var(--text2);
+}
+.gdoctor-report h3{
+  font-family:'Lora', serif; font-size:17px; color:var(--text); margin:14px 0 8px;
+}
+.gdoctor-report h3:first-child{margin-top:0;}
+.gdoctor-report p, .gdoctor-report li{
+  font-size:13px; line-height:1.75;
+}
+.gdoctor-report ul{padding-left:18px;}
+.gdoctor-report strong{color:var(--text);}
+.gdoctor-actions{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;
+}
+@media (max-width: 420px){
+  .giorno-grid-2{grid-template-columns:1fr;}
+}
+@media print{
+  body.print-doctor-report *{visibility:hidden !important;}
+  body.print-doctor-report #gDoctorModalOverlay,
+  body.print-doctor-report #gDoctorModalOverlay *{visibility:visible !important;}
+  body.print-doctor-report #gDoctorModalOverlay{
+    display:block !important; position:absolute !important; inset:0 !important; background:white !important;
+  }
+  body.print-doctor-report #gDoctorModal{
+    max-width:none !important; max-height:none !important; border-radius:0 !important; box-shadow:none !important; padding:0 !important; background:white !important;
+  }
+  body.print-doctor-report .gdoctor-close,
+  body.print-doctor-report .gdoctor-actions{display:none !important;}
+}
+</style>
+
+<div id="gDoctorModalOverlay">
+  <div id="gDoctorModal">
+    <div class="gdoctor-header">
+      <div>
+        <div class="gdoctor-title">Doctor summary</div>
+        <div class="gdoctor-sub">A plain-language summary built from your recent Giorno logs.</div>
+      </div>
+      <button id="gDoctorClose" class="gdoctor-close" type="button">×</button>
+    </div>
+    <div id="gDoctorReport" class="gdoctor-report"></div>
+    <div class="gdoctor-actions">
+      <button id="gDoctorCopy" class="giorno-mini-btn" type="button">Copy summary</button>
+      <button id="gDoctorPrint" class="giorno-export-btn" type="button" style="padding:12px 14px;">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function g(id){ return document.getElementById(id); }
+  function n(v){ const x=Number(v); return Number.isFinite(x)?x:null; }
+  function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+  function logs(days){
+    const arr = Array.isArray(window.logs) ? window.logs : [];
+    return days ? arr.slice(-days) : arr.slice();
+  }
+  function today(){
+    return logs(1)[0] || null;
+  }
+  function baseline(field, days=14){
+    const vals = logs(days).map(l => n(l?.[field] ?? l?.[field === 'restingHR' ? 'hr' : field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBase(symptom, days=14){
+    const vals = logs(days).map(l => n(l?.symptoms?.[symptom])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function fmt(v, digits=1){
+    const x = n(v);
+    return x === null ? '—' : x.toFixed(digits);
+  }
+  function statusForHRV(v){
+    const value = n(v);
+    const base = baseline('hrv');
+    if(value === null) return {pill:'neutral', label:'No HRV', text:'No HRV logged yet.'};
+    if(base !== null){
+      if(value < base * 0.85) return {pill:'red', label:'Lower than usual', text:'HRV is lower than your personal baseline.'};
+      if(value > base * 1.15) return {pill:'green', label:'Stronger than usual', text:'HRV is stronger than your usual range.'};
+      return {pill:'amber', label:'Near your normal', text:'HRV is close to your usual pattern.'};
+    }
+    if(value < 30) return {pill:'red', label:'Lower day', text:'HRV is on the lower side compared with general ranges.'};
+    if(value > 70) return {pill:'green', label:'Higher day', text:'HRV is on the higher side compared with general ranges.'};
+    return {pill:'amber', label:'Mid range', text:'HRV is in a middle range compared with general averages.'};
+  }
+  function statusForCrash(){
+    const t = today();
+    if(!t) return {pill:'neutral', label:'No signal yet', why:'Log more days and Giorno will get more specific about what usually comes before harder days.'};
+
+    const reasons = [];
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const energy = n(t.energy);
+    const fatigue = n(t?.symptoms?.fatigue);
+    const dizziness = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness);
+
+    if(hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is below your usual');
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is above your usual');
+    if(sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if(energy !== null && energy <= 2) reasons.push('energy is already low');
+    if(fatigue !== null && fatigue >= 3) reasons.push('fatigue is elevated');
+    if(dizziness !== null && dizziness >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if(reasons.length >= 4) return {pill:'red', label:'Higher strain', why:'Today may feel harder because ' + reasons.join(', ') + '.'};
+    if(reasons.length >= 2) return {pill:'amber', label:'Watch today', why:'There are a few things worth watching: ' + reasons.join(', ') + '.'};
+    return {pill:'green', label:'Lower strain', why: reasons.length ? 'A mild signal is present: ' + reasons.join(', ') + '.' : 'Nothing major is standing out as a warning pattern right now.'};
+  }
+  function explainToday(){
+    const t = today();
+    if(!t) return 'Start logging and Giorno will begin turning your data into calmer, more useful insights.';
+    const parts = [];
+    const e = n(t.energy), eBase = baseline('energy');
+    const sleep = n(t.sleepHours), sleepBase = baseline('sleepHours');
+    const hrv = n(t.hrv), hrvBase = baseline('hrv');
+    const hr = n(t.restingHR ?? t.hr), hrBase = baseline('restingHR');
+    const fatigue = n(t?.symptoms?.fatigue), dizzy = n(t?.symptoms?.ortho ?? t?.symptoms?.dizziness), headache = n(t?.symptoms?.headache);
+
+    if(e !== null){
+      if(e <= 2) parts.push('This looks like a harder day for you.');
+      else if(eBase !== null && e > eBase) parts.push('You seem to have a little more energy than your recent average.');
+      else if(eBase !== null && e < eBase) parts.push('Your energy looks a bit lower than your recent pattern.');
+    }
+    if(sleep !== null && sleepBase !== null){
+      if(sleep < sleepBase * 0.85) parts.push('Sleep was shorter than your usual, which may be affecting today.');
+      else if(sleep > sleepBase * 1.15) parts.push('You got a bit more sleep than usual.');
+    }
+    if(hrv !== null && hrvBase !== null){
+      if(hrv < hrvBase * 0.85) parts.push('HRV is lower than your normal range.');
+      else if(hrv > hrvBase * 1.15) parts.push('HRV looks a little stronger than your usual.');
+    }
+    if(hr !== null && hrBase !== null && hr > hrBase * 1.1) parts.push('Resting heart rate is running higher than your usual.');
+    if(fatigue !== null && fatigue >= 3) parts.push('Fatigue is already elevated.');
+    if(dizzy !== null && dizzy >= 3) parts.push('Dizziness is high enough today that it may help to take things gently.');
+    if(headache !== null && headache >= 3) parts.push('Headache symptoms also look significant today.');
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+  function buildPatterns(){
+    const arr = logs(14);
+    if(arr.length < 5) return ['Log a few more days and Giorno will start surfacing stronger patterns here.'];
+    const hard = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2);
+    const out = [];
+    if(hard.length >= 3) out.push('You’ve had several lower-energy days recently.');
+    if(hard.filter(l => n(l.sleepHours) !== null && n(l.sleepHours) < 6).length >= 2) out.push('Short sleep often shows up on your harder days.');
+    const hrvBase = baseline('hrv');
+    if(hard.filter(l => n(l.hrv) !== null && hrvBase !== null && n(l.hrv) < hrvBase * 0.9).length >= 2) out.push('Lower HRV tends to appear before or on rougher days for you.');
+    if(hard.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length >= 2) out.push('Headache flares are worth comparing against food, hydration, and sleep.');
+    if(!out.length) out.push('Nothing consistent is standing out yet — which is still useful information.');
+    return out;
+  }
+  function weekSummary(){
+    const arr = logs(7);
+    if(arr.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here.';
+    const lowDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const parts = [];
+    parts.push(lowDays >= 3 ? `This week has felt heavier than usual, with ${lowDays} lower-energy days.` : 'This week looks relatively steadier overall.');
+    if(avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if(avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)} compared with your recent pattern.`);
+    if(avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+    return parts.join(' ');
+  }
+  function injectPremiumDashboard(){
+    const dash = g('section-dashboard');
+    if(!dash) return;
+    const existing = g('giornoPremiumWrap');
+    if(existing) existing.remove();
+
+    const hrv = statusForHRV(today()?.hrv);
+    const crash = statusForCrash();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'giornoPremiumWrap';
+    wrap.className = 'giorno-premium-wrap';
+    wrap.innerHTML = `
+      <div class="giorno-hero-card">
+        <div class="giorno-hero-kicker">Today, in plain language</div>
+        <div class="giorno-hero-title">Giorno is watching for the shape of your day — not just raw numbers.</div>
+        <div id="giornoPremiumNarrative" class="giorno-hero-body"></div>
+      </div>
+
+      <div class="giorno-grid-2">
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">HRV</div>
+          <div class="giorno-pill ${hrv.pill}">${hrv.label}</div>
+          <div class="giorno-metric-value">${fmt(today()?.hrv)}</div>
+          <div class="giorno-metric-sub">${hrv.text}</div>
+        </div>
+
+        <div class="giorno-metric-card">
+          <div class="giorno-metric-label">Crash flag</div>
+          <div class="giorno-pill ${crash.pill}">${crash.label}</div>
+          <div class="giorno-metric-value">${crash.pill === 'red' ? '↑' : crash.pill === 'amber' ? '•' : '↓'}</div>
+          <div class="giorno-metric-sub">${crash.why}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Patterns Giorno is noticing</div>
+        <div id="giornoPremiumPatterns" class="giorno-soft-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Explain my week</div>
+        <div id="giornoPremiumWeek" class="giorno-note"></div>
+        <div class="giorno-mini-actions">
+          <button id="giornoDoctorSummaryBtn" class="giorno-mini-btn" type="button">Doctor summary</button>
+          <button id="giornoDoctorCopyShortBtn" class="giorno-mini-btn" type="button">Copy summary</button>
+        </div>
+      </div>
+    `;
+    dash.prepend(wrap);
+
+    g('giornoPremiumNarrative').textContent = explainToday();
+    g('giornoPremiumPatterns').innerHTML = buildPatterns().map(x => `<div class="giorno-soft-item">${x}</div>`).join('');
+    g('giornoPremiumWeek').textContent = weekSummary();
+
+    g('giornoDoctorSummaryBtn')?.addEventListener('click', openDoctorModal);
+    g('giornoDoctorCopyShortBtn')?.addEventListener('click', copyDoctorSummary);
+  }
+  function doctorSummaryHtml(){
+    const arr = logs(30);
+    const t = today();
+    if(!arr.length){
+      return `<h3>Summary</h3><p>Not enough data yet. Log a few days first.</p>`;
+    }
+    const avgSleep = avg(arr.map(l => n(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(arr.map(l => n(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(arr.map(l => n(l.restingHR ?? l.hr)).filter(v => v !== null));
+    const avgEnergy = avg(arr.map(l => n(l.energy)).filter(v => v !== null));
+    const lowEnergyDays = arr.filter(l => n(l.energy) !== null && n(l.energy) <= 2).length;
+    const fatigueDays = arr.filter(l => n(l?.symptoms?.fatigue) !== null && n(l?.symptoms?.fatigue) >= 3).length;
+    const headacheDays = arr.filter(l => n(l?.symptoms?.headache) !== null && n(l?.symptoms?.headache) >= 3).length;
+    const dizzinessDays = arr.filter(l => n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) !== null && n(l?.symptoms?.ortho ?? l?.symptoms?.dizziness) >= 3).length;
+    const patterns = buildPatterns();
+    return `
+      <h3>Plain-language summary</h3>
+      <p>Over the last <strong>${arr.length} logged days</strong>, Giorno shows <strong>${lowEnergyDays}</strong> lower-energy days, with average energy around <strong>${fmt(avgEnergy)}</strong> / 5. Average sleep was <strong>${fmt(avgSleep)} hours</strong>, average HRV was <strong>${fmt(avgHRV)}</strong>, and average resting heart rate was <strong>${avgHR === null ? '—' : avgHR.toFixed(0)}</strong>.</p>
+
+      <h3>Most noticeable symptoms</h3>
+      <ul>
+        <li>Higher-fatigue days: <strong>${fatigueDays}</strong></li>
+        <li>Headache flare days: <strong>${headacheDays}</strong></li>
+        <li>Dizziness / orthostatic symptom days: <strong>${dizzinessDays}</strong></li>
+      </ul>
+
+      <h3>Current day snapshot</h3>
+      <p>${t ? explainToday() : 'No current-day snapshot available.'}</p>
+
+      <h3>Patterns worth noting</h3>
+      <ul>
+        ${patterns.map(p => `<li>${p}</li>`).join('')}
+      </ul>
+
+      <h3>Disclaimer</h3>
+      <p>This summary is for pattern awareness and discussion support. It is not a diagnosis tool.</p>
+    `;
+  }
+  function doctorSummaryText(){
+    const div = document.createElement('div');
+    div.innerHTML = doctorSummaryHtml();
+    return div.textContent.replace(/\n\s+/g, '\n').trim();
+  }
+  function openDoctorModal(){
+    g('gDoctorReport').innerHTML = doctorSummaryHtml();
+    g('gDoctorModalOverlay').classList.add('open');
+  }
+  function closeDoctorModal(){
+    g('gDoctorModalOverlay').classList.remove('open');
+  }
+  function copyDoctorSummary(){
+    const text = doctorSummaryText();
+    navigator.clipboard?.writeText(text).then(function(){
+      if(typeof showToast === 'function') showToast('Doctor summary copied');
+    }).catch(function(){});
+  }
+  function bindDoctorModal(){
+    g('gDoctorClose')?.addEventListener('click', closeDoctorModal);
+    g('gDoctorModalOverlay')?.addEventListener('click', function(e){
+      if(e.target === g('gDoctorModalOverlay')) closeDoctorModal();
+    });
+    g('gDoctorCopy')?.addEventListener('click', copyDoctorSummary);
+    g('gDoctorPrint')?.addEventListener('click', function(){
+      document.body.classList.add('print-doctor-report');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('print-doctor-report'); }, 300);
+    });
+  }
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function(){
+    if(typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    injectPremiumDashboard();
+  };
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function(){
+    const out = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    setTimeout(injectPremiumDashboard, 120);
+    return out;
+  };
+  window.addEventListener('load', function(){
+    bindDoctorModal();
+    setTimeout(injectPremiumDashboard, 350);
+  });
 })();
 </script>
 
