@@ -7571,6 +7571,173 @@ function generateReport() {
 })();
 </script>
 
+
+<script>
+(function () {
+  let authModeFixed = 'login';
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function getFixedToken() {
+    try {
+      if (typeof getToken === 'function') return getToken() || '';
+      return localStorage.getItem('giornoToken') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setFixedToken(token) {
+    try {
+      if (typeof setToken === 'function') {
+        setToken(token || '');
+      } else if (token) {
+        localStorage.setItem('giornoToken', token);
+      } else {
+        localStorage.removeItem('giornoToken');
+      }
+    } catch (e) {}
+  }
+
+  function updateFixedAuthUi() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const title = document.querySelector('#authOverlayInjected .onboard-logo');
+    const eyebrow = document.querySelector('#authOverlayInjected .onboard-eyebrow');
+
+    if (title) title.textContent = 'Giorno';
+    if (eyebrow) eyebrow.textContent = 'Giorno account';
+
+    if (loginBtn) loginBtn.classList.toggle('active', authModeFixed === 'login');
+    if (signupBtn) signupBtn.classList.toggle('active', authModeFixed === 'signup');
+    if (submitBtn) submitBtn.textContent = authModeFixed === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  function showFixedAuthError(message) {
+    const err = el('authErrorInjected');
+    if (err) err.textContent = message || '';
+  }
+
+  function openFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.remove('hidden');
+    updateFixedAuthUi();
+  }
+
+  function closeFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  async function finishFixedAuth(token, user) {
+    setFixedToken(token);
+    try {
+      sessionStorage.removeItem('giornoAuthHydrated');
+    } catch (e) {}
+    if (typeof window.currentUser !== 'undefined') {
+      window.currentUser = user || null;
+    }
+    if (typeof window.serverSyncEnabled !== 'undefined') {
+      window.serverSyncEnabled = true;
+    }
+    closeFixedOverlay();
+    if (typeof window.showToast === 'function') {
+      window.showToast(authModeFixed === 'login' ? 'Logged in' : 'Account created');
+    }
+    setTimeout(() => location.reload(), 150);
+  }
+
+  async function submitFixedAuth() {
+    const username = (el('authUsernameInjected')?.value || '').trim();
+    const password = el('authPasswordInjected')?.value || '';
+
+    showFixedAuthError('');
+
+    if (!username || !password) {
+      showFixedAuthError('Enter both username and password.');
+      return;
+    }
+
+    try {
+      const path = authModeFixed === 'login' ? '/api/login' : '/api/signup';
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      await finishFixedAuth(data.token, data.user || null);
+    } catch (err) {
+      showFixedAuthError(err.message || 'Authentication failed');
+    }
+  }
+
+  function bindFixedAuth() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const cancelBtn = el('authCancelInjected');
+    const passInput = el('authPasswordInjected');
+
+    if (loginBtn) loginBtn.onclick = function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+    };
+
+    if (signupBtn) signupBtn.onclick = function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+    };
+
+    if (submitBtn) submitBtn.onclick = submitFixedAuth;
+
+    if (cancelBtn) {
+      cancelBtn.onclick = function () {
+        if (getFixedToken()) closeFixedOverlay();
+      };
+    }
+
+    if (passInput) {
+      passInput.onkeydown = function (e) {
+        if (e.key === 'Enter') submitFixedAuth();
+      };
+    }
+
+    window.loginInjected = async function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    window.signupInjected = async function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    updateFixedAuthUi();
+  }
+
+  window.addEventListener('load', function () {
+    bindFixedAuth();
+    if (!getFixedToken()) {
+      openFixedOverlay();
+    }
+  });
+
+  setTimeout(bindFixedAuth, 200);
+})();
+</script>
+
 </body></html>`;
 
   const win = window.open('', '_blank');
@@ -8787,6 +8954,173 @@ function printMedList() {
     if (label) label.textContent = lastSyncLabel();
     setAppStatus(authToken2() ? 'Logged in and ready for testing.' : 'Using local-only mode until you log in.', authToken2() ? 'success' : 'warn');
   });
+})();
+</script>
+
+
+<script>
+(function () {
+  let authModeFixed = 'login';
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function getFixedToken() {
+    try {
+      if (typeof getToken === 'function') return getToken() || '';
+      return localStorage.getItem('giornoToken') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setFixedToken(token) {
+    try {
+      if (typeof setToken === 'function') {
+        setToken(token || '');
+      } else if (token) {
+        localStorage.setItem('giornoToken', token);
+      } else {
+        localStorage.removeItem('giornoToken');
+      }
+    } catch (e) {}
+  }
+
+  function updateFixedAuthUi() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const title = document.querySelector('#authOverlayInjected .onboard-logo');
+    const eyebrow = document.querySelector('#authOverlayInjected .onboard-eyebrow');
+
+    if (title) title.textContent = 'Giorno';
+    if (eyebrow) eyebrow.textContent = 'Giorno account';
+
+    if (loginBtn) loginBtn.classList.toggle('active', authModeFixed === 'login');
+    if (signupBtn) signupBtn.classList.toggle('active', authModeFixed === 'signup');
+    if (submitBtn) submitBtn.textContent = authModeFixed === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  function showFixedAuthError(message) {
+    const err = el('authErrorInjected');
+    if (err) err.textContent = message || '';
+  }
+
+  function openFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.remove('hidden');
+    updateFixedAuthUi();
+  }
+
+  function closeFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  async function finishFixedAuth(token, user) {
+    setFixedToken(token);
+    try {
+      sessionStorage.removeItem('giornoAuthHydrated');
+    } catch (e) {}
+    if (typeof window.currentUser !== 'undefined') {
+      window.currentUser = user || null;
+    }
+    if (typeof window.serverSyncEnabled !== 'undefined') {
+      window.serverSyncEnabled = true;
+    }
+    closeFixedOverlay();
+    if (typeof window.showToast === 'function') {
+      window.showToast(authModeFixed === 'login' ? 'Logged in' : 'Account created');
+    }
+    setTimeout(() => location.reload(), 150);
+  }
+
+  async function submitFixedAuth() {
+    const username = (el('authUsernameInjected')?.value || '').trim();
+    const password = el('authPasswordInjected')?.value || '';
+
+    showFixedAuthError('');
+
+    if (!username || !password) {
+      showFixedAuthError('Enter both username and password.');
+      return;
+    }
+
+    try {
+      const path = authModeFixed === 'login' ? '/api/login' : '/api/signup';
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      await finishFixedAuth(data.token, data.user || null);
+    } catch (err) {
+      showFixedAuthError(err.message || 'Authentication failed');
+    }
+  }
+
+  function bindFixedAuth() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const cancelBtn = el('authCancelInjected');
+    const passInput = el('authPasswordInjected');
+
+    if (loginBtn) loginBtn.onclick = function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+    };
+
+    if (signupBtn) signupBtn.onclick = function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+    };
+
+    if (submitBtn) submitBtn.onclick = submitFixedAuth;
+
+    if (cancelBtn) {
+      cancelBtn.onclick = function () {
+        if (getFixedToken()) closeFixedOverlay();
+      };
+    }
+
+    if (passInput) {
+      passInput.onkeydown = function (e) {
+        if (e.key === 'Enter') submitFixedAuth();
+      };
+    }
+
+    window.loginInjected = async function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    window.signupInjected = async function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    updateFixedAuthUi();
+  }
+
+  window.addEventListener('load', function () {
+    bindFixedAuth();
+    if (!getFixedToken()) {
+      openFixedOverlay();
+    }
+  });
+
+  setTimeout(bindFixedAuth, 200);
 })();
 </script>
 
@@ -12850,6 +13184,173 @@ function printDoctorLetter() {
 })();
 </script>
 
+
+<script>
+(function () {
+  let authModeFixed = 'login';
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function getFixedToken() {
+    try {
+      if (typeof getToken === 'function') return getToken() || '';
+      return localStorage.getItem('giornoToken') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setFixedToken(token) {
+    try {
+      if (typeof setToken === 'function') {
+        setToken(token || '');
+      } else if (token) {
+        localStorage.setItem('giornoToken', token);
+      } else {
+        localStorage.removeItem('giornoToken');
+      }
+    } catch (e) {}
+  }
+
+  function updateFixedAuthUi() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const title = document.querySelector('#authOverlayInjected .onboard-logo');
+    const eyebrow = document.querySelector('#authOverlayInjected .onboard-eyebrow');
+
+    if (title) title.textContent = 'Giorno';
+    if (eyebrow) eyebrow.textContent = 'Giorno account';
+
+    if (loginBtn) loginBtn.classList.toggle('active', authModeFixed === 'login');
+    if (signupBtn) signupBtn.classList.toggle('active', authModeFixed === 'signup');
+    if (submitBtn) submitBtn.textContent = authModeFixed === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  function showFixedAuthError(message) {
+    const err = el('authErrorInjected');
+    if (err) err.textContent = message || '';
+  }
+
+  function openFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.remove('hidden');
+    updateFixedAuthUi();
+  }
+
+  function closeFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  async function finishFixedAuth(token, user) {
+    setFixedToken(token);
+    try {
+      sessionStorage.removeItem('giornoAuthHydrated');
+    } catch (e) {}
+    if (typeof window.currentUser !== 'undefined') {
+      window.currentUser = user || null;
+    }
+    if (typeof window.serverSyncEnabled !== 'undefined') {
+      window.serverSyncEnabled = true;
+    }
+    closeFixedOverlay();
+    if (typeof window.showToast === 'function') {
+      window.showToast(authModeFixed === 'login' ? 'Logged in' : 'Account created');
+    }
+    setTimeout(() => location.reload(), 150);
+  }
+
+  async function submitFixedAuth() {
+    const username = (el('authUsernameInjected')?.value || '').trim();
+    const password = el('authPasswordInjected')?.value || '';
+
+    showFixedAuthError('');
+
+    if (!username || !password) {
+      showFixedAuthError('Enter both username and password.');
+      return;
+    }
+
+    try {
+      const path = authModeFixed === 'login' ? '/api/login' : '/api/signup';
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      await finishFixedAuth(data.token, data.user || null);
+    } catch (err) {
+      showFixedAuthError(err.message || 'Authentication failed');
+    }
+  }
+
+  function bindFixedAuth() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const cancelBtn = el('authCancelInjected');
+    const passInput = el('authPasswordInjected');
+
+    if (loginBtn) loginBtn.onclick = function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+    };
+
+    if (signupBtn) signupBtn.onclick = function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+    };
+
+    if (submitBtn) submitBtn.onclick = submitFixedAuth;
+
+    if (cancelBtn) {
+      cancelBtn.onclick = function () {
+        if (getFixedToken()) closeFixedOverlay();
+      };
+    }
+
+    if (passInput) {
+      passInput.onkeydown = function (e) {
+        if (e.key === 'Enter') submitFixedAuth();
+      };
+    }
+
+    window.loginInjected = async function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    window.signupInjected = async function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    updateFixedAuthUi();
+  }
+
+  window.addEventListener('load', function () {
+    bindFixedAuth();
+    if (!getFixedToken()) {
+      openFixedOverlay();
+    }
+  });
+
+  setTimeout(bindFixedAuth, 200);
+})();
+</script>
+
 </body></html>`);
   win.document.close();
   win.focus();
@@ -14697,6 +15198,173 @@ function copyApptSummary() {
     if (label) label.textContent = lastSyncLabel();
     setAppStatus(authToken2() ? 'Logged in and ready for testing.' : 'Using local-only mode until you log in.', authToken2() ? 'success' : 'warn');
   });
+})();
+</script>
+
+
+<script>
+(function () {
+  let authModeFixed = 'login';
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function getFixedToken() {
+    try {
+      if (typeof getToken === 'function') return getToken() || '';
+      return localStorage.getItem('giornoToken') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setFixedToken(token) {
+    try {
+      if (typeof setToken === 'function') {
+        setToken(token || '');
+      } else if (token) {
+        localStorage.setItem('giornoToken', token);
+      } else {
+        localStorage.removeItem('giornoToken');
+      }
+    } catch (e) {}
+  }
+
+  function updateFixedAuthUi() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const title = document.querySelector('#authOverlayInjected .onboard-logo');
+    const eyebrow = document.querySelector('#authOverlayInjected .onboard-eyebrow');
+
+    if (title) title.textContent = 'Giorno';
+    if (eyebrow) eyebrow.textContent = 'Giorno account';
+
+    if (loginBtn) loginBtn.classList.toggle('active', authModeFixed === 'login');
+    if (signupBtn) signupBtn.classList.toggle('active', authModeFixed === 'signup');
+    if (submitBtn) submitBtn.textContent = authModeFixed === 'login' ? 'Log in' : 'Sign up';
+  }
+
+  function showFixedAuthError(message) {
+    const err = el('authErrorInjected');
+    if (err) err.textContent = message || '';
+  }
+
+  function openFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.remove('hidden');
+    updateFixedAuthUi();
+  }
+
+  function closeFixedOverlay() {
+    const overlay = el('authOverlayInjected');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  async function finishFixedAuth(token, user) {
+    setFixedToken(token);
+    try {
+      sessionStorage.removeItem('giornoAuthHydrated');
+    } catch (e) {}
+    if (typeof window.currentUser !== 'undefined') {
+      window.currentUser = user || null;
+    }
+    if (typeof window.serverSyncEnabled !== 'undefined') {
+      window.serverSyncEnabled = true;
+    }
+    closeFixedOverlay();
+    if (typeof window.showToast === 'function') {
+      window.showToast(authModeFixed === 'login' ? 'Logged in' : 'Account created');
+    }
+    setTimeout(() => location.reload(), 150);
+  }
+
+  async function submitFixedAuth() {
+    const username = (el('authUsernameInjected')?.value || '').trim();
+    const password = el('authPasswordInjected')?.value || '';
+
+    showFixedAuthError('');
+
+    if (!username || !password) {
+      showFixedAuthError('Enter both username and password.');
+      return;
+    }
+
+    try {
+      const path = authModeFixed === 'login' ? '/api/login' : '/api/signup';
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      await finishFixedAuth(data.token, data.user || null);
+    } catch (err) {
+      showFixedAuthError(err.message || 'Authentication failed');
+    }
+  }
+
+  function bindFixedAuth() {
+    const loginBtn = el('authModeLogin');
+    const signupBtn = el('authModeSignup');
+    const submitBtn = el('authSubmitInjected');
+    const cancelBtn = el('authCancelInjected');
+    const passInput = el('authPasswordInjected');
+
+    if (loginBtn) loginBtn.onclick = function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+    };
+
+    if (signupBtn) signupBtn.onclick = function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+    };
+
+    if (submitBtn) submitBtn.onclick = submitFixedAuth;
+
+    if (cancelBtn) {
+      cancelBtn.onclick = function () {
+        if (getFixedToken()) closeFixedOverlay();
+      };
+    }
+
+    if (passInput) {
+      passInput.onkeydown = function (e) {
+        if (e.key === 'Enter') submitFixedAuth();
+      };
+    }
+
+    window.loginInjected = async function () {
+      authModeFixed = 'login';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    window.signupInjected = async function () {
+      authModeFixed = 'signup';
+      updateFixedAuthUi();
+      return submitFixedAuth();
+    };
+
+    updateFixedAuthUi();
+  }
+
+  window.addEventListener('load', function () {
+    bindFixedAuth();
+    if (!getFixedToken()) {
+      openFixedOverlay();
+    }
+  });
+
+  setTimeout(bindFixedAuth, 200);
 })();
 </script>
 
