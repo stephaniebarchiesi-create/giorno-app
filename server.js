@@ -149,6 +149,11 @@ async function initDb() {
   `);
 
   await pool.query(`
+    ALTER TABLE user_data
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+  `);
+
+  await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_user_data_user_created
     ON user_data(user_id, created_at DESC);
   `);
