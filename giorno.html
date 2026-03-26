@@ -2519,10 +2519,6 @@
     margin-top: 2px;
     display: block;
   }
-
-  /* Brand voice polish */
-  .header-left p { letter-spacing: 0.1px; }
-  .card-title { letter-spacing: -0.15px; }
 </style>
 </head>
 <body>
@@ -2668,7 +2664,7 @@
     <button class="nav-btn" onclick="showSection('caregiver')">Caregiver</button>
     <button class="nav-btn" onclick="showSection('community')">Community</button>
     <button class="nav-btn" onclick="showSection('settings')">Customize</button>
-    <button class="nav-btn" onclick="showSection('appinfo')">About</button>
+    <button class="nav-btn" onclick="showSection('appinfo')">Settings</button>
     <button class="nav-btn" onclick="showSection('science')">The Science</button>
     <button class="nav-btn" onclick="showSection('support')">Support</button>
   </div>
@@ -3836,12 +3832,12 @@
 
       <div id="syncSignedOut">
         <div class="wearable-note" style="margin-bottom:20px;">
-          Sync is part of your <strong>Giorno account</strong> — there is no separate sync login anymore.<br><br>
-          Sign in from the <strong>Account</strong> button in the header when you want your logs backed up across devices and tied to the same account you'll keep using after launch.
+          Create a free account to sync your data across devices. Your logs are encrypted and stored securely — you can export or delete everything at any time.<br><br>
+          <strong>Your data is never sold or used for advertising.</strong>
         </div>
 
-        <button class="save-btn" style="width:100%;text-align:center;" onclick="window.giornoOpenOverlay ? window.giornoOpenOverlay() : void 0;">Open account</button>
-        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Local mode still works if you are not ready to create an account yet.</div>
+        <button class="save-btn" style="width:100%;text-align:center;" onclick="window.location.href='/api/login'">Sign in / Create account →</button>
+        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Supports Google, Apple, GitHub, and email</div>
       </div>
 
       <div id="syncSignedIn" style="display:none;">
@@ -3866,18 +3862,19 @@
         </div>
 
         <button class="add-btn" style="width:100%;margin-bottom:8px;" onclick="manualSync()">↻ Sync now</button>
-        <button class="med-bulk-btn none-taken" style="width:100%;margin-top:4px;" onclick="window.giornoLogout ? window.giornoLogout() : (localStorage.removeItem('giornoToken'), location.reload())">Sign out</button>
+        <button class="med-bulk-btn none-taken" style="width:100%;margin-top:4px;" onclick="window.location.href='/api/logout'">Sign out</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">How sync works</div>
+      <div class="card-title">Privacy & data</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        <strong>One Giorno account:</strong> the same account handles sign-in, cloud backup, Apple Shortcut sync, export, and account deletion.<br><br>
-        <strong>Local-first:</strong> your device still keeps its local copy first. Sync adds account backup and cross-device access.<br><br>
-        <strong>Use cases:</strong> sign in when you want to keep the same account after launch, move between devices, or use your personal shortcut token safely.
+        <strong>Local-first:</strong> All data is stored on your device first. Cloud sync is optional and additive — disabling it doesn't delete your local data.<br><br>
+        <strong>Encryption:</strong> Your health data is encrypted before it leaves your device and stored encrypted at rest.<br><br>
+        <strong>No tracking:</strong> Giorno doesn't use analytics, advertising SDKs, or third-party trackers of any kind.<br><br>
+        <strong>Deletion:</strong> You can delete your account and all associated data at any time from this screen.
       </div>
-      <button class="add-btn" style="width:100%;margin-top:8px;" onclick="showSection('appinfo')">Read privacy & about Giorno</button>
+      <button class="modal-delete-full" style="margin-top:16px;" onclick="deleteAccount()">Delete my account and all data</button>
     </div>
   </div>
 
@@ -4408,53 +4405,6 @@
 
   <div class="section" id="section-appinfo">
 
-    <div class="card">
-      <div class="card-title">What is Giorno?</div>
-      <div class="card-subtitle">Health pattern tracking for complicated days.</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        Giorno is a gentle, local-first health tracker built for bodies that do not behave predictably. It helps people notice patterns across symptoms, energy, HRV, heart rate, sleep, triggers, pacing, and crashes — without making them feel like they need to perform wellness perfectly.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">About the creator</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        <strong>Hi, I'm Stephanie Barchiesi.</strong><br><br>
-        I'm a mental health therapist, and I built Giorno because I know how hard it is to live in a body that feels inconsistent, confusing, and difficult to explain. Giorno is meant to feel calm, useful, and human — less like homework, and more like a place that helps you understand your own patterns.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Privacy</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        <strong>Your data belongs to you.</strong><br><br>
-        Giorno is designed to be local-first. Your device keeps your local data, and signing in simply adds account sync, export, and backup. Your data is not sold, not used for advertising, and not shared as a hidden business model.<br><br>
-        If you create an account, your synced data stays tied to that same Giorno account so testers can keep using it after launch. You can export your data, and you can delete your account and synced data.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Accounts & sync</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        There is no separate sync login anymore. Your <strong>Giorno account</strong> is the account for everything: sign-in, cloud sync, Apple Shortcut token, export, and account deletion. That keeps things simpler and helps you stay on the same account long-term.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Medical disclaimer</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        Giorno is for tracking and pattern awareness. It is not a diagnosis tool, not emergency support, and not a replacement for medical care. Color cues, HRV guidance, crash flags, and pattern coaching are meant to help you notice trends — not tell you what diagnosis you have.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Contact & feedback</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.85;">
-        If something feels confusing, broken, or emotionally off, please say so. Giorno should feel useful and safe, not intimidating. The feedback section is there because the app is being shaped around real lived experience.
-      </div>
-    </div>
-
-
     <div class="card" id="installGuideCard">
       <div class="card-title">📲 Add Giorno to your home screen</div>
       <div class="card-subtitle">A shortcut — nothing gets downloaded or installed</div>
@@ -4638,7 +4588,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Version & changelog</div>
+      <div class="card-title">Privacy & legal</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
         <strong>Your data stays on your device</strong> unless you choose to enable cloud sync. Giorno doesn't use analytics, advertising SDKs, or third-party trackers.<br><br>
         <strong>What we collect (if sync is on):</strong> Your encrypted symptom logs, medication list, and account email. Nothing else.<br><br>
@@ -6473,7 +6423,281 @@ function generateReport() {
   ${rangeLogs.filter(l => l.goodDayNotes).slice(0,10).map(l => `
     <div class="note-entry"><div class="note-date">${l.date} — Energy ${l.energy}/5</div>${l.goodDayNotes}</div>`).join('') || '<p style="color:#9c9088;font-size:13px;">No good day notes in this period.</p>'}` : ''}
 
-  </body></html>`;
+  
+<script>
+(function () {
+  function g$(id) { return document.getElementById(id); }
+  function num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  function avg(arr) {
+    return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  }
+  function recentLogs(days=14) {
+    return Array.isArray(window.logs) ? window.logs.slice(-days) : [];
+  }
+  function baselineFor(field, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.[field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBaseline(symptomId, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.symptoms?.[symptomId])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function todayEntry() {
+    if (typeof todayKey === 'function' && Array.isArray(window.logs)) {
+      const found = window.logs.find(l => l.date === todayKey());
+      if (found) return found;
+    }
+    return window.todayLog || null;
+  }
+
+  function comparePhrase(value, base, lowerWord='lower', higherWord='higher') {
+    const v = num(value), b = num(base);
+    if (v === null || b === null) return '';
+    if (v < b * 0.85) return `${lowerWord} than your usual`;
+    if (v > b * 1.15) return `${higherWord} than your usual`;
+    return `around your normal`;
+  }
+
+  function ensureDifferentiatorCards() {
+    const dash = g$('section-dashboard');
+    if (dash && !g$('giornoFrontAndCenterCard')) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+        <div class="card" id="giornoFrontAndCenterCard">
+          <div class="card-title">Today, in plain language</div>
+          <div id="giornoTodayNarrative" style="font-size:14px;line-height:1.8;color:var(--text);"></div>
+        </div>
+
+        <div class="card" id="giornoCrashWhyCard">
+          <div class="card-title">Why today may feel harder</div>
+          <div id="giornoCrashWhy" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoPatternCard">
+          <div class="card-title">Patterns Giorno is noticing</div>
+          <div id="giornoPatternList" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoExplainWeekCard">
+          <div class="card-title">Explain my week</div>
+          <div id="giornoWeekSummary" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+      `;
+      dash.insertBefore(wrapper, dash.firstChild);
+    }
+
+    const logSection = g$('section-log');
+    if (logSection && !g$('giornoBadDayModeCard')) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'giornoBadDayModeCard';
+      card.innerHTML = `
+        <div class="card-title">Low-energy options</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+          Giorno should still be useful on the days when filling things out feels like too much.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="giornoBadDayQuickLog" class="add-btn" type="button" style="width:100%;">Bad day quick log</button>
+          <button id="giornoSameAsYesterday" class="add-btn" type="button" style="width:100%;">Use yesterday as a base</button>
+        </div>
+      `;
+      logSection.insertBefore(card, logSection.children[1] || null);
+    }
+  }
+
+  function buildTodayNarrative() {
+    const today = todayEntry();
+    if (!today) return 'Start logging and Giorno will begin turning raw data into patterns and plain-language guidance.';
+
+    const parts = [];
+    const e = num(today.energy);
+    const sleep = num(today.sleepHours);
+    const hr = num(today.restingHR || today.hr);
+    const hrv = num(today.hrv);
+
+    const eBase = baselineFor('energy');
+    const sleepBase = baselineFor('sleepHours');
+    const hrBase = baselineFor('restingHR');
+    const hrvBase = baselineFor('hrv');
+
+    if (e !== null) {
+      if (e <= 2) parts.push('This looks like a harder day for you.');
+      else if (eBase !== null && e > eBase) parts.push('You seem to have a bit more energy than your recent average.');
+      else if (eBase !== null && e < eBase) parts.push('Your energy looks a little lower than your recent pattern.');
+    }
+
+    if (sleep !== null && sleepBase !== null) {
+      const phrase = comparePhrase(sleep, sleepBase, 'shorter', 'longer');
+      if (phrase) parts.push(`Sleep was ${phrase} today.`);
+    }
+
+    if (hrv !== null && hrvBase !== null) {
+      const phrase = comparePhrase(hrv, hrvBase);
+      if (phrase) parts.push(`HRV is ${phrase}.`);
+    }
+
+    if (hr !== null && hrBase !== null) {
+      if (hr > hrBase * 1.1) parts.push('Resting heart rate looks higher than your usual.');
+      else if (hr < hrBase * 0.9) parts.push('Resting heart rate looks lower than your usual.');
+    }
+
+    const fatigue = num(today?.symptoms?.fatigue);
+    const dizziness = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+    const headache = num(today?.symptoms?.headache);
+
+    if (fatigue !== null && symptomBaseline('fatigue') !== null) {
+      const fBase = symptomBaseline('fatigue');
+      if (fatigue > fBase + 0.7) parts.push('Fatigue is also running above your usual.');
+    }
+    if (dizziness !== null && dizziness >= 3) parts.push('Dizziness is high enough today that it may be worth taking things gently.');
+    if (headache !== null && headache >= 3) parts.push('Headache symptoms look significant today.');
+
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+
+  function buildCrashWhy() {
+    const today = todayEntry();
+    if (!today) return 'No strong warning patterns yet.';
+
+    const reasons = [];
+    const hrv = num(today.hrv), hrvBase = baselineFor('hrv');
+    const hr = num(today.restingHR || today.hr), hrBase = baselineFor('restingHR');
+    const sleep = num(today.sleepHours), sleepBase = baselineFor('sleepHours');
+    const energy = num(today.energy);
+    const fatigue = num(today?.symptoms?.fatigue);
+    const ortho = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+
+    if (hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is lower than your usual');
+    if (hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is higher than your usual');
+    if (sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if (energy !== null && energy <= 2) reasons.push('energy is already low');
+    if (fatigue !== null && fatigue >= 3) reasons.push('fatigue is already elevated');
+    if (ortho !== null && ortho >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if (!reasons.length) {
+      return 'No strong warning patterns are standing out right now. Giorno will keep watching for repeated combinations that tend to show up before harder days.';
+    }
+
+    return `Today may feel harder because ${reasons.join(', ')}. Giorno is using your own recent baseline first, not just generic averages.`;
+  }
+
+  function buildPatterns() {
+    const logs = recentLogs(14);
+    if (logs.length < 5) return 'Log a few more days and Giorno will start surfacing stronger patterns here.';
+
+    const patterns = [];
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2);
+    const shortSleepHard = hardDays.filter(l => num(l.sleepHours) !== null && num(l.sleepHours) < 6).length;
+    const lowHrvHard = hardDays.filter(l => num(l.hrv) !== null && num(l.hrv) < (baselineFor('hrv') || 30) * 0.9).length;
+    const headacheHard = hardDays.filter(l => num(l?.symptoms?.headache) !== null && num(l?.symptoms?.headache) >= 3).length;
+
+    if (hardDays.length >= 3) patterns.push('Low-energy days have been showing up repeatedly in your recent logs.');
+    if (shortSleepHard >= 2) patterns.push('Short sleep often shows up on your harder days.');
+    if (lowHrvHard >= 2) patterns.push('Lower HRV tends to appear before or on rougher days for you.');
+    if (headacheHard >= 2) patterns.push('Headache flares are showing up often enough to be worth comparing against food, hydration, and sleep.');
+
+    if (!patterns.length) patterns.push('No strong repeated patterns yet — which is still useful information.');
+    return patterns.map(p => `• ${p}`).join('<br>');
+  }
+
+  function buildWeekSummary() {
+    const logs = recentLogs(7);
+    if (logs.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here in one short paragraph.';
+
+    const avgEnergy = avg(logs.map(l => num(l.energy)).filter(v => v !== null));
+    const avgSleep = avg(logs.map(l => num(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(logs.map(l => num(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(logs.map(l => num(l.restingHR || l.hr)).filter(v => v !== null));
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2).length;
+
+    const parts = [];
+    if (hardDays >= 3) parts.push(`This week looked heavier than usual, with ${hardDays} low-energy days.`);
+    else parts.push('This week looked a little steadier overall.');
+
+    if (avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if (avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)}.`);
+    if (avgHR !== null) parts.push(`Resting heart rate averaged ${avgHR.toFixed(0)}.`);
+    if (avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+
+    return parts.join(' ');
+  }
+
+  function updateDifferentiatorUi() {
+    ensureDifferentiatorCards();
+    const todayEl = g$('giornoTodayNarrative');
+    const whyEl = g$('giornoCrashWhy');
+    const patternEl = g$('giornoPatternList');
+    const weekEl = g$('giornoWeekSummary');
+    if (todayEl) todayEl.textContent = buildTodayNarrative();
+    if (whyEl) whyEl.textContent = buildCrashWhy();
+    if (patternEl) patternEl.innerHTML = buildPatterns();
+    if (weekEl) weekEl.textContent = buildWeekSummary();
+  }
+
+  function cloneYesterdayBase() {
+    if (!Array.isArray(window.logs) || window.logs.length === 0) return false;
+    const y = window.logs[window.logs.length - 1];
+    if (!y) return false;
+
+    const clone = JSON.parse(JSON.stringify(y));
+    if (typeof todayKey === 'function') clone.date = todayKey();
+    clone.timestamp = Date.now();
+    window.todayLog = Object.assign(window.todayLog || {}, clone);
+
+    try {
+      const notes = g$('todayNotes');
+      if (notes) notes.value = clone.notes || '';
+      if (typeof loadTodayLog === 'function') loadTodayLog();
+    } catch (e) {}
+    return true;
+  }
+
+  function bindLowEnergyActions() {
+    g$('giornoBadDayQuickLog')?.addEventListener('click', function () {
+      window.todayLog = window.todayLog || { symptoms:{}, meds:{} };
+      window.todayLog.energy = 1;
+      window.todayLog.notes = window.todayLog.notes || 'Hard day. Using quick log.';
+      if (window.todayLog.symptoms) {
+        if (window.todayLog.symptoms.fatigue == null) window.todayLog.symptoms.fatigue = 3;
+      }
+      if (typeof saveToday === 'function') saveToday();
+      if (typeof showToast === 'function') showToast('Quick bad-day log saved');
+    });
+
+    g$('giornoSameAsYesterday')?.addEventListener('click', function () {
+      if (cloneYesterdayBase()) {
+        if (typeof showToast === 'function') showToast('Loaded yesterday as a starting point');
+      } else if (typeof showToast === 'function') {
+        showToast('No previous day to copy yet');
+      }
+    });
+  }
+
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function () {
+    if (typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    updateDifferentiatorUi();
+  };
+
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function () {
+    const result = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    updateDifferentiatorUi();
+    return result;
+  };
+
+  window.addEventListener('load', function () {
+    ensureDifferentiatorCards();
+    bindLowEnergyActions();
+    updateDifferentiatorUi();
+  });
+})();
+</script>
+
+</body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(reportHTML);
@@ -6544,7 +6768,281 @@ function printMedList() {
   </table>
   <div class="footer">Generated by Giorno · For reference only · Always confirm with your prescriber</div>
   <script>window.onload = function(){ window.print(); }<\/script>
-  </body></html>`;
+  
+<script>
+(function () {
+  function g$(id) { return document.getElementById(id); }
+  function num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  function avg(arr) {
+    return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  }
+  function recentLogs(days=14) {
+    return Array.isArray(window.logs) ? window.logs.slice(-days) : [];
+  }
+  function baselineFor(field, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.[field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBaseline(symptomId, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.symptoms?.[symptomId])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function todayEntry() {
+    if (typeof todayKey === 'function' && Array.isArray(window.logs)) {
+      const found = window.logs.find(l => l.date === todayKey());
+      if (found) return found;
+    }
+    return window.todayLog || null;
+  }
+
+  function comparePhrase(value, base, lowerWord='lower', higherWord='higher') {
+    const v = num(value), b = num(base);
+    if (v === null || b === null) return '';
+    if (v < b * 0.85) return `${lowerWord} than your usual`;
+    if (v > b * 1.15) return `${higherWord} than your usual`;
+    return `around your normal`;
+  }
+
+  function ensureDifferentiatorCards() {
+    const dash = g$('section-dashboard');
+    if (dash && !g$('giornoFrontAndCenterCard')) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+        <div class="card" id="giornoFrontAndCenterCard">
+          <div class="card-title">Today, in plain language</div>
+          <div id="giornoTodayNarrative" style="font-size:14px;line-height:1.8;color:var(--text);"></div>
+        </div>
+
+        <div class="card" id="giornoCrashWhyCard">
+          <div class="card-title">Why today may feel harder</div>
+          <div id="giornoCrashWhy" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoPatternCard">
+          <div class="card-title">Patterns Giorno is noticing</div>
+          <div id="giornoPatternList" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoExplainWeekCard">
+          <div class="card-title">Explain my week</div>
+          <div id="giornoWeekSummary" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+      `;
+      dash.insertBefore(wrapper, dash.firstChild);
+    }
+
+    const logSection = g$('section-log');
+    if (logSection && !g$('giornoBadDayModeCard')) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'giornoBadDayModeCard';
+      card.innerHTML = `
+        <div class="card-title">Low-energy options</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+          Giorno should still be useful on the days when filling things out feels like too much.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="giornoBadDayQuickLog" class="add-btn" type="button" style="width:100%;">Bad day quick log</button>
+          <button id="giornoSameAsYesterday" class="add-btn" type="button" style="width:100%;">Use yesterday as a base</button>
+        </div>
+      `;
+      logSection.insertBefore(card, logSection.children[1] || null);
+    }
+  }
+
+  function buildTodayNarrative() {
+    const today = todayEntry();
+    if (!today) return 'Start logging and Giorno will begin turning raw data into patterns and plain-language guidance.';
+
+    const parts = [];
+    const e = num(today.energy);
+    const sleep = num(today.sleepHours);
+    const hr = num(today.restingHR || today.hr);
+    const hrv = num(today.hrv);
+
+    const eBase = baselineFor('energy');
+    const sleepBase = baselineFor('sleepHours');
+    const hrBase = baselineFor('restingHR');
+    const hrvBase = baselineFor('hrv');
+
+    if (e !== null) {
+      if (e <= 2) parts.push('This looks like a harder day for you.');
+      else if (eBase !== null && e > eBase) parts.push('You seem to have a bit more energy than your recent average.');
+      else if (eBase !== null && e < eBase) parts.push('Your energy looks a little lower than your recent pattern.');
+    }
+
+    if (sleep !== null && sleepBase !== null) {
+      const phrase = comparePhrase(sleep, sleepBase, 'shorter', 'longer');
+      if (phrase) parts.push(`Sleep was ${phrase} today.`);
+    }
+
+    if (hrv !== null && hrvBase !== null) {
+      const phrase = comparePhrase(hrv, hrvBase);
+      if (phrase) parts.push(`HRV is ${phrase}.`);
+    }
+
+    if (hr !== null && hrBase !== null) {
+      if (hr > hrBase * 1.1) parts.push('Resting heart rate looks higher than your usual.');
+      else if (hr < hrBase * 0.9) parts.push('Resting heart rate looks lower than your usual.');
+    }
+
+    const fatigue = num(today?.symptoms?.fatigue);
+    const dizziness = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+    const headache = num(today?.symptoms?.headache);
+
+    if (fatigue !== null && symptomBaseline('fatigue') !== null) {
+      const fBase = symptomBaseline('fatigue');
+      if (fatigue > fBase + 0.7) parts.push('Fatigue is also running above your usual.');
+    }
+    if (dizziness !== null && dizziness >= 3) parts.push('Dizziness is high enough today that it may be worth taking things gently.');
+    if (headache !== null && headache >= 3) parts.push('Headache symptoms look significant today.');
+
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+
+  function buildCrashWhy() {
+    const today = todayEntry();
+    if (!today) return 'No strong warning patterns yet.';
+
+    const reasons = [];
+    const hrv = num(today.hrv), hrvBase = baselineFor('hrv');
+    const hr = num(today.restingHR || today.hr), hrBase = baselineFor('restingHR');
+    const sleep = num(today.sleepHours), sleepBase = baselineFor('sleepHours');
+    const energy = num(today.energy);
+    const fatigue = num(today?.symptoms?.fatigue);
+    const ortho = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+
+    if (hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is lower than your usual');
+    if (hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is higher than your usual');
+    if (sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if (energy !== null && energy <= 2) reasons.push('energy is already low');
+    if (fatigue !== null && fatigue >= 3) reasons.push('fatigue is already elevated');
+    if (ortho !== null && ortho >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if (!reasons.length) {
+      return 'No strong warning patterns are standing out right now. Giorno will keep watching for repeated combinations that tend to show up before harder days.';
+    }
+
+    return `Today may feel harder because ${reasons.join(', ')}. Giorno is using your own recent baseline first, not just generic averages.`;
+  }
+
+  function buildPatterns() {
+    const logs = recentLogs(14);
+    if (logs.length < 5) return 'Log a few more days and Giorno will start surfacing stronger patterns here.';
+
+    const patterns = [];
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2);
+    const shortSleepHard = hardDays.filter(l => num(l.sleepHours) !== null && num(l.sleepHours) < 6).length;
+    const lowHrvHard = hardDays.filter(l => num(l.hrv) !== null && num(l.hrv) < (baselineFor('hrv') || 30) * 0.9).length;
+    const headacheHard = hardDays.filter(l => num(l?.symptoms?.headache) !== null && num(l?.symptoms?.headache) >= 3).length;
+
+    if (hardDays.length >= 3) patterns.push('Low-energy days have been showing up repeatedly in your recent logs.');
+    if (shortSleepHard >= 2) patterns.push('Short sleep often shows up on your harder days.');
+    if (lowHrvHard >= 2) patterns.push('Lower HRV tends to appear before or on rougher days for you.');
+    if (headacheHard >= 2) patterns.push('Headache flares are showing up often enough to be worth comparing against food, hydration, and sleep.');
+
+    if (!patterns.length) patterns.push('No strong repeated patterns yet — which is still useful information.');
+    return patterns.map(p => `• ${p}`).join('<br>');
+  }
+
+  function buildWeekSummary() {
+    const logs = recentLogs(7);
+    if (logs.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here in one short paragraph.';
+
+    const avgEnergy = avg(logs.map(l => num(l.energy)).filter(v => v !== null));
+    const avgSleep = avg(logs.map(l => num(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(logs.map(l => num(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(logs.map(l => num(l.restingHR || l.hr)).filter(v => v !== null));
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2).length;
+
+    const parts = [];
+    if (hardDays >= 3) parts.push(`This week looked heavier than usual, with ${hardDays} low-energy days.`);
+    else parts.push('This week looked a little steadier overall.');
+
+    if (avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if (avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)}.`);
+    if (avgHR !== null) parts.push(`Resting heart rate averaged ${avgHR.toFixed(0)}.`);
+    if (avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+
+    return parts.join(' ');
+  }
+
+  function updateDifferentiatorUi() {
+    ensureDifferentiatorCards();
+    const todayEl = g$('giornoTodayNarrative');
+    const whyEl = g$('giornoCrashWhy');
+    const patternEl = g$('giornoPatternList');
+    const weekEl = g$('giornoWeekSummary');
+    if (todayEl) todayEl.textContent = buildTodayNarrative();
+    if (whyEl) whyEl.textContent = buildCrashWhy();
+    if (patternEl) patternEl.innerHTML = buildPatterns();
+    if (weekEl) weekEl.textContent = buildWeekSummary();
+  }
+
+  function cloneYesterdayBase() {
+    if (!Array.isArray(window.logs) || window.logs.length === 0) return false;
+    const y = window.logs[window.logs.length - 1];
+    if (!y) return false;
+
+    const clone = JSON.parse(JSON.stringify(y));
+    if (typeof todayKey === 'function') clone.date = todayKey();
+    clone.timestamp = Date.now();
+    window.todayLog = Object.assign(window.todayLog || {}, clone);
+
+    try {
+      const notes = g$('todayNotes');
+      if (notes) notes.value = clone.notes || '';
+      if (typeof loadTodayLog === 'function') loadTodayLog();
+    } catch (e) {}
+    return true;
+  }
+
+  function bindLowEnergyActions() {
+    g$('giornoBadDayQuickLog')?.addEventListener('click', function () {
+      window.todayLog = window.todayLog || { symptoms:{}, meds:{} };
+      window.todayLog.energy = 1;
+      window.todayLog.notes = window.todayLog.notes || 'Hard day. Using quick log.';
+      if (window.todayLog.symptoms) {
+        if (window.todayLog.symptoms.fatigue == null) window.todayLog.symptoms.fatigue = 3;
+      }
+      if (typeof saveToday === 'function') saveToday();
+      if (typeof showToast === 'function') showToast('Quick bad-day log saved');
+    });
+
+    g$('giornoSameAsYesterday')?.addEventListener('click', function () {
+      if (cloneYesterdayBase()) {
+        if (typeof showToast === 'function') showToast('Loaded yesterday as a starting point');
+      } else if (typeof showToast === 'function') {
+        showToast('No previous day to copy yet');
+      }
+    });
+  }
+
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function () {
+    if (typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    updateDifferentiatorUi();
+  };
+
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function () {
+    const result = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    updateDifferentiatorUi();
+    return result;
+  };
+
+  window.addEventListener('load', function () {
+    ensureDifferentiatorCards();
+    bindLowEnergyActions();
+    updateDifferentiatorUi();
+  });
+})();
+</script>
+
+</body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
@@ -9438,7 +9936,281 @@ function printDoctorLetter() {
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>Doctor Letter</title>
   <style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;line-height:1.8;font-size:14px;color:#222;white-space:pre-wrap;}</style>
-  </head><body>${text.replace(/</g,'&lt;')}</body></html>`);
+  </head><body>${text.replace(/</g,'&lt;')}
+<script>
+(function () {
+  function g$(id) { return document.getElementById(id); }
+  function num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  function avg(arr) {
+    return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  }
+  function recentLogs(days=14) {
+    return Array.isArray(window.logs) ? window.logs.slice(-days) : [];
+  }
+  function baselineFor(field, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.[field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBaseline(symptomId, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.symptoms?.[symptomId])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function todayEntry() {
+    if (typeof todayKey === 'function' && Array.isArray(window.logs)) {
+      const found = window.logs.find(l => l.date === todayKey());
+      if (found) return found;
+    }
+    return window.todayLog || null;
+  }
+
+  function comparePhrase(value, base, lowerWord='lower', higherWord='higher') {
+    const v = num(value), b = num(base);
+    if (v === null || b === null) return '';
+    if (v < b * 0.85) return `${lowerWord} than your usual`;
+    if (v > b * 1.15) return `${higherWord} than your usual`;
+    return `around your normal`;
+  }
+
+  function ensureDifferentiatorCards() {
+    const dash = g$('section-dashboard');
+    if (dash && !g$('giornoFrontAndCenterCard')) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+        <div class="card" id="giornoFrontAndCenterCard">
+          <div class="card-title">Today, in plain language</div>
+          <div id="giornoTodayNarrative" style="font-size:14px;line-height:1.8;color:var(--text);"></div>
+        </div>
+
+        <div class="card" id="giornoCrashWhyCard">
+          <div class="card-title">Why today may feel harder</div>
+          <div id="giornoCrashWhy" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoPatternCard">
+          <div class="card-title">Patterns Giorno is noticing</div>
+          <div id="giornoPatternList" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoExplainWeekCard">
+          <div class="card-title">Explain my week</div>
+          <div id="giornoWeekSummary" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+      `;
+      dash.insertBefore(wrapper, dash.firstChild);
+    }
+
+    const logSection = g$('section-log');
+    if (logSection && !g$('giornoBadDayModeCard')) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'giornoBadDayModeCard';
+      card.innerHTML = `
+        <div class="card-title">Low-energy options</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+          Giorno should still be useful on the days when filling things out feels like too much.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="giornoBadDayQuickLog" class="add-btn" type="button" style="width:100%;">Bad day quick log</button>
+          <button id="giornoSameAsYesterday" class="add-btn" type="button" style="width:100%;">Use yesterday as a base</button>
+        </div>
+      `;
+      logSection.insertBefore(card, logSection.children[1] || null);
+    }
+  }
+
+  function buildTodayNarrative() {
+    const today = todayEntry();
+    if (!today) return 'Start logging and Giorno will begin turning raw data into patterns and plain-language guidance.';
+
+    const parts = [];
+    const e = num(today.energy);
+    const sleep = num(today.sleepHours);
+    const hr = num(today.restingHR || today.hr);
+    const hrv = num(today.hrv);
+
+    const eBase = baselineFor('energy');
+    const sleepBase = baselineFor('sleepHours');
+    const hrBase = baselineFor('restingHR');
+    const hrvBase = baselineFor('hrv');
+
+    if (e !== null) {
+      if (e <= 2) parts.push('This looks like a harder day for you.');
+      else if (eBase !== null && e > eBase) parts.push('You seem to have a bit more energy than your recent average.');
+      else if (eBase !== null && e < eBase) parts.push('Your energy looks a little lower than your recent pattern.');
+    }
+
+    if (sleep !== null && sleepBase !== null) {
+      const phrase = comparePhrase(sleep, sleepBase, 'shorter', 'longer');
+      if (phrase) parts.push(`Sleep was ${phrase} today.`);
+    }
+
+    if (hrv !== null && hrvBase !== null) {
+      const phrase = comparePhrase(hrv, hrvBase);
+      if (phrase) parts.push(`HRV is ${phrase}.`);
+    }
+
+    if (hr !== null && hrBase !== null) {
+      if (hr > hrBase * 1.1) parts.push('Resting heart rate looks higher than your usual.');
+      else if (hr < hrBase * 0.9) parts.push('Resting heart rate looks lower than your usual.');
+    }
+
+    const fatigue = num(today?.symptoms?.fatigue);
+    const dizziness = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+    const headache = num(today?.symptoms?.headache);
+
+    if (fatigue !== null && symptomBaseline('fatigue') !== null) {
+      const fBase = symptomBaseline('fatigue');
+      if (fatigue > fBase + 0.7) parts.push('Fatigue is also running above your usual.');
+    }
+    if (dizziness !== null && dizziness >= 3) parts.push('Dizziness is high enough today that it may be worth taking things gently.');
+    if (headache !== null && headache >= 3) parts.push('Headache symptoms look significant today.');
+
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+
+  function buildCrashWhy() {
+    const today = todayEntry();
+    if (!today) return 'No strong warning patterns yet.';
+
+    const reasons = [];
+    const hrv = num(today.hrv), hrvBase = baselineFor('hrv');
+    const hr = num(today.restingHR || today.hr), hrBase = baselineFor('restingHR');
+    const sleep = num(today.sleepHours), sleepBase = baselineFor('sleepHours');
+    const energy = num(today.energy);
+    const fatigue = num(today?.symptoms?.fatigue);
+    const ortho = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+
+    if (hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is lower than your usual');
+    if (hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is higher than your usual');
+    if (sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if (energy !== null && energy <= 2) reasons.push('energy is already low');
+    if (fatigue !== null && fatigue >= 3) reasons.push('fatigue is already elevated');
+    if (ortho !== null && ortho >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if (!reasons.length) {
+      return 'No strong warning patterns are standing out right now. Giorno will keep watching for repeated combinations that tend to show up before harder days.';
+    }
+
+    return `Today may feel harder because ${reasons.join(', ')}. Giorno is using your own recent baseline first, not just generic averages.`;
+  }
+
+  function buildPatterns() {
+    const logs = recentLogs(14);
+    if (logs.length < 5) return 'Log a few more days and Giorno will start surfacing stronger patterns here.';
+
+    const patterns = [];
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2);
+    const shortSleepHard = hardDays.filter(l => num(l.sleepHours) !== null && num(l.sleepHours) < 6).length;
+    const lowHrvHard = hardDays.filter(l => num(l.hrv) !== null && num(l.hrv) < (baselineFor('hrv') || 30) * 0.9).length;
+    const headacheHard = hardDays.filter(l => num(l?.symptoms?.headache) !== null && num(l?.symptoms?.headache) >= 3).length;
+
+    if (hardDays.length >= 3) patterns.push('Low-energy days have been showing up repeatedly in your recent logs.');
+    if (shortSleepHard >= 2) patterns.push('Short sleep often shows up on your harder days.');
+    if (lowHrvHard >= 2) patterns.push('Lower HRV tends to appear before or on rougher days for you.');
+    if (headacheHard >= 2) patterns.push('Headache flares are showing up often enough to be worth comparing against food, hydration, and sleep.');
+
+    if (!patterns.length) patterns.push('No strong repeated patterns yet — which is still useful information.');
+    return patterns.map(p => `• ${p}`).join('<br>');
+  }
+
+  function buildWeekSummary() {
+    const logs = recentLogs(7);
+    if (logs.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here in one short paragraph.';
+
+    const avgEnergy = avg(logs.map(l => num(l.energy)).filter(v => v !== null));
+    const avgSleep = avg(logs.map(l => num(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(logs.map(l => num(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(logs.map(l => num(l.restingHR || l.hr)).filter(v => v !== null));
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2).length;
+
+    const parts = [];
+    if (hardDays >= 3) parts.push(`This week looked heavier than usual, with ${hardDays} low-energy days.`);
+    else parts.push('This week looked a little steadier overall.');
+
+    if (avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if (avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)}.`);
+    if (avgHR !== null) parts.push(`Resting heart rate averaged ${avgHR.toFixed(0)}.`);
+    if (avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+
+    return parts.join(' ');
+  }
+
+  function updateDifferentiatorUi() {
+    ensureDifferentiatorCards();
+    const todayEl = g$('giornoTodayNarrative');
+    const whyEl = g$('giornoCrashWhy');
+    const patternEl = g$('giornoPatternList');
+    const weekEl = g$('giornoWeekSummary');
+    if (todayEl) todayEl.textContent = buildTodayNarrative();
+    if (whyEl) whyEl.textContent = buildCrashWhy();
+    if (patternEl) patternEl.innerHTML = buildPatterns();
+    if (weekEl) weekEl.textContent = buildWeekSummary();
+  }
+
+  function cloneYesterdayBase() {
+    if (!Array.isArray(window.logs) || window.logs.length === 0) return false;
+    const y = window.logs[window.logs.length - 1];
+    if (!y) return false;
+
+    const clone = JSON.parse(JSON.stringify(y));
+    if (typeof todayKey === 'function') clone.date = todayKey();
+    clone.timestamp = Date.now();
+    window.todayLog = Object.assign(window.todayLog || {}, clone);
+
+    try {
+      const notes = g$('todayNotes');
+      if (notes) notes.value = clone.notes || '';
+      if (typeof loadTodayLog === 'function') loadTodayLog();
+    } catch (e) {}
+    return true;
+  }
+
+  function bindLowEnergyActions() {
+    g$('giornoBadDayQuickLog')?.addEventListener('click', function () {
+      window.todayLog = window.todayLog || { symptoms:{}, meds:{} };
+      window.todayLog.energy = 1;
+      window.todayLog.notes = window.todayLog.notes || 'Hard day. Using quick log.';
+      if (window.todayLog.symptoms) {
+        if (window.todayLog.symptoms.fatigue == null) window.todayLog.symptoms.fatigue = 3;
+      }
+      if (typeof saveToday === 'function') saveToday();
+      if (typeof showToast === 'function') showToast('Quick bad-day log saved');
+    });
+
+    g$('giornoSameAsYesterday')?.addEventListener('click', function () {
+      if (cloneYesterdayBase()) {
+        if (typeof showToast === 'function') showToast('Loaded yesterday as a starting point');
+      } else if (typeof showToast === 'function') {
+        showToast('No previous day to copy yet');
+      }
+    });
+  }
+
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function () {
+    if (typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    updateDifferentiatorUi();
+  };
+
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function () {
+    const result = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    updateDifferentiatorUi();
+    return result;
+  };
+
+  window.addEventListener('load', function () {
+    ensureDifferentiatorCards();
+    bindLowEnergyActions();
+    updateDifferentiatorUi();
+  });
+})();
+</script>
+
+</body></html>`);
   win.document.close();
   win.focus();
   setTimeout(() => win.print(), 400);
@@ -10353,13 +11125,283 @@ function copyApptSummary() {
     giornoUpdateOverlay();
   }
 
-  window.giornoOpenOverlay = giornoOpenOverlay;
-  window.giornoCloseOverlay = giornoCloseOverlay;
-  window.giornoLogout = giornoLogout;
-
   window.addEventListener('load', function () {
     giornoBindAuth();
     giornoCheckAuth();
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  function g$(id) { return document.getElementById(id); }
+  function num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  function avg(arr) {
+    return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  }
+  function recentLogs(days=14) {
+    return Array.isArray(window.logs) ? window.logs.slice(-days) : [];
+  }
+  function baselineFor(field, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.[field])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function symptomBaseline(symptomId, days=14) {
+    const vals = recentLogs(days).map(l => num(l?.symptoms?.[symptomId])).filter(v => v !== null);
+    return avg(vals);
+  }
+  function todayEntry() {
+    if (typeof todayKey === 'function' && Array.isArray(window.logs)) {
+      const found = window.logs.find(l => l.date === todayKey());
+      if (found) return found;
+    }
+    return window.todayLog || null;
+  }
+
+  function comparePhrase(value, base, lowerWord='lower', higherWord='higher') {
+    const v = num(value), b = num(base);
+    if (v === null || b === null) return '';
+    if (v < b * 0.85) return `${lowerWord} than your usual`;
+    if (v > b * 1.15) return `${higherWord} than your usual`;
+    return `around your normal`;
+  }
+
+  function ensureDifferentiatorCards() {
+    const dash = g$('section-dashboard');
+    if (dash && !g$('giornoFrontAndCenterCard')) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
+        <div class="card" id="giornoFrontAndCenterCard">
+          <div class="card-title">Today, in plain language</div>
+          <div id="giornoTodayNarrative" style="font-size:14px;line-height:1.8;color:var(--text);"></div>
+        </div>
+
+        <div class="card" id="giornoCrashWhyCard">
+          <div class="card-title">Why today may feel harder</div>
+          <div id="giornoCrashWhy" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoPatternCard">
+          <div class="card-title">Patterns Giorno is noticing</div>
+          <div id="giornoPatternList" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+
+        <div class="card" id="giornoExplainWeekCard">
+          <div class="card-title">Explain my week</div>
+          <div id="giornoWeekSummary" style="font-size:13px;line-height:1.8;color:var(--text2);"></div>
+        </div>
+      `;
+      dash.insertBefore(wrapper, dash.firstChild);
+    }
+
+    const logSection = g$('section-log');
+    if (logSection && !g$('giornoBadDayModeCard')) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'giornoBadDayModeCard';
+      card.innerHTML = `
+        <div class="card-title">Low-energy options</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+          Giorno should still be useful on the days when filling things out feels like too much.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="giornoBadDayQuickLog" class="add-btn" type="button" style="width:100%;">Bad day quick log</button>
+          <button id="giornoSameAsYesterday" class="add-btn" type="button" style="width:100%;">Use yesterday as a base</button>
+        </div>
+      `;
+      logSection.insertBefore(card, logSection.children[1] || null);
+    }
+  }
+
+  function buildTodayNarrative() {
+    const today = todayEntry();
+    if (!today) return 'Start logging and Giorno will begin turning raw data into patterns and plain-language guidance.';
+
+    const parts = [];
+    const e = num(today.energy);
+    const sleep = num(today.sleepHours);
+    const hr = num(today.restingHR || today.hr);
+    const hrv = num(today.hrv);
+
+    const eBase = baselineFor('energy');
+    const sleepBase = baselineFor('sleepHours');
+    const hrBase = baselineFor('restingHR');
+    const hrvBase = baselineFor('hrv');
+
+    if (e !== null) {
+      if (e <= 2) parts.push('This looks like a harder day for you.');
+      else if (eBase !== null && e > eBase) parts.push('You seem to have a bit more energy than your recent average.');
+      else if (eBase !== null && e < eBase) parts.push('Your energy looks a little lower than your recent pattern.');
+    }
+
+    if (sleep !== null && sleepBase !== null) {
+      const phrase = comparePhrase(sleep, sleepBase, 'shorter', 'longer');
+      if (phrase) parts.push(`Sleep was ${phrase} today.`);
+    }
+
+    if (hrv !== null && hrvBase !== null) {
+      const phrase = comparePhrase(hrv, hrvBase);
+      if (phrase) parts.push(`HRV is ${phrase}.`);
+    }
+
+    if (hr !== null && hrBase !== null) {
+      if (hr > hrBase * 1.1) parts.push('Resting heart rate looks higher than your usual.');
+      else if (hr < hrBase * 0.9) parts.push('Resting heart rate looks lower than your usual.');
+    }
+
+    const fatigue = num(today?.symptoms?.fatigue);
+    const dizziness = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+    const headache = num(today?.symptoms?.headache);
+
+    if (fatigue !== null && symptomBaseline('fatigue') !== null) {
+      const fBase = symptomBaseline('fatigue');
+      if (fatigue > fBase + 0.7) parts.push('Fatigue is also running above your usual.');
+    }
+    if (dizziness !== null && dizziness >= 3) parts.push('Dizziness is high enough today that it may be worth taking things gently.');
+    if (headache !== null && headache >= 3) parts.push('Headache symptoms look significant today.');
+
+    return parts.length ? parts.join(' ') : 'Things look relatively steady compared with your recent pattern.';
+  }
+
+  function buildCrashWhy() {
+    const today = todayEntry();
+    if (!today) return 'No strong warning patterns yet.';
+
+    const reasons = [];
+    const hrv = num(today.hrv), hrvBase = baselineFor('hrv');
+    const hr = num(today.restingHR || today.hr), hrBase = baselineFor('restingHR');
+    const sleep = num(today.sleepHours), sleepBase = baselineFor('sleepHours');
+    const energy = num(today.energy);
+    const fatigue = num(today?.symptoms?.fatigue);
+    const ortho = num(today?.symptoms?.ortho ?? today?.symptoms?.dizziness);
+
+    if (hrv !== null && hrvBase !== null && hrv < hrvBase * 0.85) reasons.push('HRV is lower than your usual');
+    if (hr !== null && hrBase !== null && hr > hrBase * 1.1) reasons.push('resting heart rate is higher than your usual');
+    if (sleep !== null && sleepBase !== null && sleep < sleepBase * 0.85) reasons.push('sleep was shorter than your normal');
+    if (energy !== null && energy <= 2) reasons.push('energy is already low');
+    if (fatigue !== null && fatigue >= 3) reasons.push('fatigue is already elevated');
+    if (ortho !== null && ortho >= 3) reasons.push('orthostatic symptoms are elevated');
+
+    if (!reasons.length) {
+      return 'No strong warning patterns are standing out right now. Giorno will keep watching for repeated combinations that tend to show up before harder days.';
+    }
+
+    return `Today may feel harder because ${reasons.join(', ')}. Giorno is using your own recent baseline first, not just generic averages.`;
+  }
+
+  function buildPatterns() {
+    const logs = recentLogs(14);
+    if (logs.length < 5) return 'Log a few more days and Giorno will start surfacing stronger patterns here.';
+
+    const patterns = [];
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2);
+    const shortSleepHard = hardDays.filter(l => num(l.sleepHours) !== null && num(l.sleepHours) < 6).length;
+    const lowHrvHard = hardDays.filter(l => num(l.hrv) !== null && num(l.hrv) < (baselineFor('hrv') || 30) * 0.9).length;
+    const headacheHard = hardDays.filter(l => num(l?.symptoms?.headache) !== null && num(l?.symptoms?.headache) >= 3).length;
+
+    if (hardDays.length >= 3) patterns.push('Low-energy days have been showing up repeatedly in your recent logs.');
+    if (shortSleepHard >= 2) patterns.push('Short sleep often shows up on your harder days.');
+    if (lowHrvHard >= 2) patterns.push('Lower HRV tends to appear before or on rougher days for you.');
+    if (headacheHard >= 2) patterns.push('Headache flares are showing up often enough to be worth comparing against food, hydration, and sleep.');
+
+    if (!patterns.length) patterns.push('No strong repeated patterns yet — which is still useful information.');
+    return patterns.map(p => `• ${p}`).join('<br>');
+  }
+
+  function buildWeekSummary() {
+    const logs = recentLogs(7);
+    if (logs.length < 3) return 'Once you have a few more logs, Giorno will explain the shape of your week here in one short paragraph.';
+
+    const avgEnergy = avg(logs.map(l => num(l.energy)).filter(v => v !== null));
+    const avgSleep = avg(logs.map(l => num(l.sleepHours)).filter(v => v !== null));
+    const avgHRV = avg(logs.map(l => num(l.hrv)).filter(v => v !== null));
+    const avgHR = avg(logs.map(l => num(l.restingHR || l.hr)).filter(v => v !== null));
+    const hardDays = logs.filter(l => num(l.energy) !== null && num(l.energy) <= 2).length;
+
+    const parts = [];
+    if (hardDays >= 3) parts.push(`This week looked heavier than usual, with ${hardDays} low-energy days.`);
+    else parts.push('This week looked a little steadier overall.');
+
+    if (avgSleep !== null) parts.push(`Average sleep was about ${avgSleep.toFixed(1)} hours.`);
+    if (avgHRV !== null) parts.push(`Average HRV was ${avgHRV.toFixed(1)}.`);
+    if (avgHR !== null) parts.push(`Resting heart rate averaged ${avgHR.toFixed(0)}.`);
+    if (avgEnergy !== null) parts.push(`Average energy was ${avgEnergy.toFixed(1)} out of 5.`);
+
+    return parts.join(' ');
+  }
+
+  function updateDifferentiatorUi() {
+    ensureDifferentiatorCards();
+    const todayEl = g$('giornoTodayNarrative');
+    const whyEl = g$('giornoCrashWhy');
+    const patternEl = g$('giornoPatternList');
+    const weekEl = g$('giornoWeekSummary');
+    if (todayEl) todayEl.textContent = buildTodayNarrative();
+    if (whyEl) whyEl.textContent = buildCrashWhy();
+    if (patternEl) patternEl.innerHTML = buildPatterns();
+    if (weekEl) weekEl.textContent = buildWeekSummary();
+  }
+
+  function cloneYesterdayBase() {
+    if (!Array.isArray(window.logs) || window.logs.length === 0) return false;
+    const y = window.logs[window.logs.length - 1];
+    if (!y) return false;
+
+    const clone = JSON.parse(JSON.stringify(y));
+    if (typeof todayKey === 'function') clone.date = todayKey();
+    clone.timestamp = Date.now();
+    window.todayLog = Object.assign(window.todayLog || {}, clone);
+
+    try {
+      const notes = g$('todayNotes');
+      if (notes) notes.value = clone.notes || '';
+      if (typeof loadTodayLog === 'function') loadTodayLog();
+    } catch (e) {}
+    return true;
+  }
+
+  function bindLowEnergyActions() {
+    g$('giornoBadDayQuickLog')?.addEventListener('click', function () {
+      window.todayLog = window.todayLog || { symptoms:{}, meds:{} };
+      window.todayLog.energy = 1;
+      window.todayLog.notes = window.todayLog.notes || 'Hard day. Using quick log.';
+      if (window.todayLog.symptoms) {
+        if (window.todayLog.symptoms.fatigue == null) window.todayLog.symptoms.fatigue = 3;
+      }
+      if (typeof saveToday === 'function') saveToday();
+      if (typeof showToast === 'function') showToast('Quick bad-day log saved');
+    });
+
+    g$('giornoSameAsYesterday')?.addEventListener('click', function () {
+      if (cloneYesterdayBase()) {
+        if (typeof showToast === 'function') showToast('Loaded yesterday as a starting point');
+      } else if (typeof showToast === 'function') {
+        showToast('No previous day to copy yet');
+      }
+    });
+  }
+
+  const oldUpdateDashboard = window.updateDashboard;
+  window.updateDashboard = function () {
+    if (typeof oldUpdateDashboard === 'function') oldUpdateDashboard.apply(this, arguments);
+    updateDifferentiatorUi();
+  };
+
+  const oldSaveToday = window.saveToday;
+  window.saveToday = function () {
+    const result = typeof oldSaveToday === 'function' ? oldSaveToday.apply(this, arguments) : undefined;
+    updateDifferentiatorUi();
+    return result;
+  };
+
+  window.addEventListener('load', function () {
+    ensureDifferentiatorCards();
+    bindLowEnergyActions();
+    updateDifferentiatorUi();
   });
 })();
 </script>
