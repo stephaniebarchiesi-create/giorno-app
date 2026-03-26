@@ -6697,6 +6697,96 @@ function generateReport() {
 })();
 </script>
 
+
+<style>
+/* Giorno upgrades */
+#giornoTodayNarrative {font-size:15px;line-height:1.85;}
+#giornoCrashWhy,#giornoPatternList,#giornoWeekSummary {font-size:13px;line-height:1.8;color:var(--text2);}
+.giorno-soft-pill{padding:5px 10px;border-radius:999px;font-size:11px;margin-bottom:10px;display:inline-block;}
+.giorno-soft-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-soft-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-soft-pill.red{background:#f4dddd;color:#8b2513;}
+</style>
+
+<script>
+(function(){
+
+function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+
+function recentLogs(){return Array.isArray(window.logs)?window.logs.slice(-7):[];}
+function todayEntry(){return window.logs?.[window.logs.length-1]||null;}
+
+function ensureCards(){
+ const dash=document.getElementById('section-dashboard');
+ if(!dash||document.getElementById('giornoTodayNarrative'))return;
+ const wrap=document.createElement('div');
+ wrap.innerHTML=`
+ <div class="card"><div class="card-title">Today</div><div id="giornoTodayNarrative"></div></div>
+ <div class="card"><div class="card-title">Why today may feel harder</div><div id="giornoCrashWhy"></div></div>
+ <div class="card"><div class="card-title">Patterns</div><div id="giornoPatternList"></div></div>
+ <div class="card"><div class="card-title">Explain my week</div><div id="giornoWeekSummary"></div></div>
+ `;
+ dash.prepend(wrap);
+}
+
+function buildToday(){
+ const t=todayEntry(); if(!t)return "Start logging to see patterns.";
+ const logs=recentLogs();
+ const avgSleep=avg(logs.map(l=>num(l.sleepHours)||0));
+ let m=[];
+ if(t.energy<=2)m.push("This looks like a harder day for you.");
+ if(t.sleepHours&&t.sleepHours<avgSleep)m.push("Sleep was shorter than your usual.");
+ if(t.hrv&&t.hrv<30)m.push("HRV is lower than your normal.");
+ return m.length?m.join(" "):"Things look steady.";
+}
+
+function buildWhy(){
+ const t=todayEntry(); if(!t)return "";
+ let r=[];
+ if(t.hrv<30)r.push("HRV is lower than usual");
+ if(t.sleepHours<6)r.push("sleep was shorter");
+ if(t.energy<=2)r.push("energy is low");
+
+ let level="green",label="● Lower strain";
+ if(r.length>=4){level="red";label="● Higher strain";}
+ else if(r.length>=2){level="amber";label="● Watch today";}
+
+ return `<div class="giorno-soft-pill ${level}">${label}</div>`+
+ (r.length?`Today may feel harder because ${r.join(", ")}.`:"No strong signals.");
+}
+
+function buildPatterns(){
+ const logs=recentLogs();
+ let p=[];
+ if(logs.filter(l=>l.energy<=2).length>=3)p.push("Several low-energy days recently.");
+ if(logs.filter(l=>l.sleepHours<6).length>=3)p.push("Short sleep shows up often.");
+ return p.length?p.map(x=>"• "+x).join("<br>"):"No strong patterns yet.";
+}
+
+function buildWeek(){
+ const logs=recentLogs();
+ const low=logs.filter(l=>l.energy<=2).length;
+ return low>=3?`Heavier week with ${low} low-energy days.`:"Week looks stable.";
+}
+
+function update(){
+ ensureCards();
+ const t=document.getElementById('giornoTodayNarrative');
+ const w=document.getElementById('giornoCrashWhy');
+ const p=document.getElementById('giornoPatternList');
+ const wk=document.getElementById('giornoWeekSummary');
+ if(t)t.textContent=buildToday();
+ if(w)w.innerHTML=buildWhy();
+ if(p)p.innerHTML=buildPatterns();
+ if(wk)wk.textContent=buildWeek();
+}
+
+window.addEventListener('load',()=>setTimeout(update,300));
+
+})();
+</script>
+
 </body></html>`;
 
   const win = window.open('', '_blank');
@@ -7039,6 +7129,96 @@ function printMedList() {
     bindLowEnergyActions();
     updateDifferentiatorUi();
   });
+})();
+</script>
+
+
+<style>
+/* Giorno upgrades */
+#giornoTodayNarrative {font-size:15px;line-height:1.85;}
+#giornoCrashWhy,#giornoPatternList,#giornoWeekSummary {font-size:13px;line-height:1.8;color:var(--text2);}
+.giorno-soft-pill{padding:5px 10px;border-radius:999px;font-size:11px;margin-bottom:10px;display:inline-block;}
+.giorno-soft-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-soft-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-soft-pill.red{background:#f4dddd;color:#8b2513;}
+</style>
+
+<script>
+(function(){
+
+function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+
+function recentLogs(){return Array.isArray(window.logs)?window.logs.slice(-7):[];}
+function todayEntry(){return window.logs?.[window.logs.length-1]||null;}
+
+function ensureCards(){
+ const dash=document.getElementById('section-dashboard');
+ if(!dash||document.getElementById('giornoTodayNarrative'))return;
+ const wrap=document.createElement('div');
+ wrap.innerHTML=`
+ <div class="card"><div class="card-title">Today</div><div id="giornoTodayNarrative"></div></div>
+ <div class="card"><div class="card-title">Why today may feel harder</div><div id="giornoCrashWhy"></div></div>
+ <div class="card"><div class="card-title">Patterns</div><div id="giornoPatternList"></div></div>
+ <div class="card"><div class="card-title">Explain my week</div><div id="giornoWeekSummary"></div></div>
+ `;
+ dash.prepend(wrap);
+}
+
+function buildToday(){
+ const t=todayEntry(); if(!t)return "Start logging to see patterns.";
+ const logs=recentLogs();
+ const avgSleep=avg(logs.map(l=>num(l.sleepHours)||0));
+ let m=[];
+ if(t.energy<=2)m.push("This looks like a harder day for you.");
+ if(t.sleepHours&&t.sleepHours<avgSleep)m.push("Sleep was shorter than your usual.");
+ if(t.hrv&&t.hrv<30)m.push("HRV is lower than your normal.");
+ return m.length?m.join(" "):"Things look steady.";
+}
+
+function buildWhy(){
+ const t=todayEntry(); if(!t)return "";
+ let r=[];
+ if(t.hrv<30)r.push("HRV is lower than usual");
+ if(t.sleepHours<6)r.push("sleep was shorter");
+ if(t.energy<=2)r.push("energy is low");
+
+ let level="green",label="● Lower strain";
+ if(r.length>=4){level="red";label="● Higher strain";}
+ else if(r.length>=2){level="amber";label="● Watch today";}
+
+ return `<div class="giorno-soft-pill ${level}">${label}</div>`+
+ (r.length?`Today may feel harder because ${r.join(", ")}.`:"No strong signals.");
+}
+
+function buildPatterns(){
+ const logs=recentLogs();
+ let p=[];
+ if(logs.filter(l=>l.energy<=2).length>=3)p.push("Several low-energy days recently.");
+ if(logs.filter(l=>l.sleepHours<6).length>=3)p.push("Short sleep shows up often.");
+ return p.length?p.map(x=>"• "+x).join("<br>"):"No strong patterns yet.";
+}
+
+function buildWeek(){
+ const logs=recentLogs();
+ const low=logs.filter(l=>l.energy<=2).length;
+ return low>=3?`Heavier week with ${low} low-energy days.`:"Week looks stable.";
+}
+
+function update(){
+ ensureCards();
+ const t=document.getElementById('giornoTodayNarrative');
+ const w=document.getElementById('giornoCrashWhy');
+ const p=document.getElementById('giornoPatternList');
+ const wk=document.getElementById('giornoWeekSummary');
+ if(t)t.textContent=buildToday();
+ if(w)w.innerHTML=buildWhy();
+ if(p)p.innerHTML=buildPatterns();
+ if(wk)wk.textContent=buildWeek();
+}
+
+window.addEventListener('load',()=>setTimeout(update,300));
+
 })();
 </script>
 
@@ -10210,6 +10390,96 @@ function printDoctorLetter() {
 })();
 </script>
 
+
+<style>
+/* Giorno upgrades */
+#giornoTodayNarrative {font-size:15px;line-height:1.85;}
+#giornoCrashWhy,#giornoPatternList,#giornoWeekSummary {font-size:13px;line-height:1.8;color:var(--text2);}
+.giorno-soft-pill{padding:5px 10px;border-radius:999px;font-size:11px;margin-bottom:10px;display:inline-block;}
+.giorno-soft-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-soft-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-soft-pill.red{background:#f4dddd;color:#8b2513;}
+</style>
+
+<script>
+(function(){
+
+function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+
+function recentLogs(){return Array.isArray(window.logs)?window.logs.slice(-7):[];}
+function todayEntry(){return window.logs?.[window.logs.length-1]||null;}
+
+function ensureCards(){
+ const dash=document.getElementById('section-dashboard');
+ if(!dash||document.getElementById('giornoTodayNarrative'))return;
+ const wrap=document.createElement('div');
+ wrap.innerHTML=`
+ <div class="card"><div class="card-title">Today</div><div id="giornoTodayNarrative"></div></div>
+ <div class="card"><div class="card-title">Why today may feel harder</div><div id="giornoCrashWhy"></div></div>
+ <div class="card"><div class="card-title">Patterns</div><div id="giornoPatternList"></div></div>
+ <div class="card"><div class="card-title">Explain my week</div><div id="giornoWeekSummary"></div></div>
+ `;
+ dash.prepend(wrap);
+}
+
+function buildToday(){
+ const t=todayEntry(); if(!t)return "Start logging to see patterns.";
+ const logs=recentLogs();
+ const avgSleep=avg(logs.map(l=>num(l.sleepHours)||0));
+ let m=[];
+ if(t.energy<=2)m.push("This looks like a harder day for you.");
+ if(t.sleepHours&&t.sleepHours<avgSleep)m.push("Sleep was shorter than your usual.");
+ if(t.hrv&&t.hrv<30)m.push("HRV is lower than your normal.");
+ return m.length?m.join(" "):"Things look steady.";
+}
+
+function buildWhy(){
+ const t=todayEntry(); if(!t)return "";
+ let r=[];
+ if(t.hrv<30)r.push("HRV is lower than usual");
+ if(t.sleepHours<6)r.push("sleep was shorter");
+ if(t.energy<=2)r.push("energy is low");
+
+ let level="green",label="● Lower strain";
+ if(r.length>=4){level="red";label="● Higher strain";}
+ else if(r.length>=2){level="amber";label="● Watch today";}
+
+ return `<div class="giorno-soft-pill ${level}">${label}</div>`+
+ (r.length?`Today may feel harder because ${r.join(", ")}.`:"No strong signals.");
+}
+
+function buildPatterns(){
+ const logs=recentLogs();
+ let p=[];
+ if(logs.filter(l=>l.energy<=2).length>=3)p.push("Several low-energy days recently.");
+ if(logs.filter(l=>l.sleepHours<6).length>=3)p.push("Short sleep shows up often.");
+ return p.length?p.map(x=>"• "+x).join("<br>"):"No strong patterns yet.";
+}
+
+function buildWeek(){
+ const logs=recentLogs();
+ const low=logs.filter(l=>l.energy<=2).length;
+ return low>=3?`Heavier week with ${low} low-energy days.`:"Week looks stable.";
+}
+
+function update(){
+ ensureCards();
+ const t=document.getElementById('giornoTodayNarrative');
+ const w=document.getElementById('giornoCrashWhy');
+ const p=document.getElementById('giornoPatternList');
+ const wk=document.getElementById('giornoWeekSummary');
+ if(t)t.textContent=buildToday();
+ if(w)w.innerHTML=buildWhy();
+ if(p)p.innerHTML=buildPatterns();
+ if(wk)wk.textContent=buildWeek();
+}
+
+window.addEventListener('load',()=>setTimeout(update,300));
+
+})();
+</script>
+
 </body></html>`);
   win.document.close();
   win.focus();
@@ -11403,6 +11673,96 @@ function copyApptSummary() {
     bindLowEnergyActions();
     updateDifferentiatorUi();
   });
+})();
+</script>
+
+
+<style>
+/* Giorno upgrades */
+#giornoTodayNarrative {font-size:15px;line-height:1.85;}
+#giornoCrashWhy,#giornoPatternList,#giornoWeekSummary {font-size:13px;line-height:1.8;color:var(--text2);}
+.giorno-soft-pill{padding:5px 10px;border-radius:999px;font-size:11px;margin-bottom:10px;display:inline-block;}
+.giorno-soft-pill.green{background:#dff0e1;color:#2d6b3a;}
+.giorno-soft-pill.amber{background:#f3ead7;color:#8b6013;}
+.giorno-soft-pill.red{background:#f4dddd;color:#8b2513;}
+</style>
+
+<script>
+(function(){
+
+function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}
+
+function recentLogs(){return Array.isArray(window.logs)?window.logs.slice(-7):[];}
+function todayEntry(){return window.logs?.[window.logs.length-1]||null;}
+
+function ensureCards(){
+ const dash=document.getElementById('section-dashboard');
+ if(!dash||document.getElementById('giornoTodayNarrative'))return;
+ const wrap=document.createElement('div');
+ wrap.innerHTML=`
+ <div class="card"><div class="card-title">Today</div><div id="giornoTodayNarrative"></div></div>
+ <div class="card"><div class="card-title">Why today may feel harder</div><div id="giornoCrashWhy"></div></div>
+ <div class="card"><div class="card-title">Patterns</div><div id="giornoPatternList"></div></div>
+ <div class="card"><div class="card-title">Explain my week</div><div id="giornoWeekSummary"></div></div>
+ `;
+ dash.prepend(wrap);
+}
+
+function buildToday(){
+ const t=todayEntry(); if(!t)return "Start logging to see patterns.";
+ const logs=recentLogs();
+ const avgSleep=avg(logs.map(l=>num(l.sleepHours)||0));
+ let m=[];
+ if(t.energy<=2)m.push("This looks like a harder day for you.");
+ if(t.sleepHours&&t.sleepHours<avgSleep)m.push("Sleep was shorter than your usual.");
+ if(t.hrv&&t.hrv<30)m.push("HRV is lower than your normal.");
+ return m.length?m.join(" "):"Things look steady.";
+}
+
+function buildWhy(){
+ const t=todayEntry(); if(!t)return "";
+ let r=[];
+ if(t.hrv<30)r.push("HRV is lower than usual");
+ if(t.sleepHours<6)r.push("sleep was shorter");
+ if(t.energy<=2)r.push("energy is low");
+
+ let level="green",label="● Lower strain";
+ if(r.length>=4){level="red";label="● Higher strain";}
+ else if(r.length>=2){level="amber";label="● Watch today";}
+
+ return `<div class="giorno-soft-pill ${level}">${label}</div>`+
+ (r.length?`Today may feel harder because ${r.join(", ")}.`:"No strong signals.");
+}
+
+function buildPatterns(){
+ const logs=recentLogs();
+ let p=[];
+ if(logs.filter(l=>l.energy<=2).length>=3)p.push("Several low-energy days recently.");
+ if(logs.filter(l=>l.sleepHours<6).length>=3)p.push("Short sleep shows up often.");
+ return p.length?p.map(x=>"• "+x).join("<br>"):"No strong patterns yet.";
+}
+
+function buildWeek(){
+ const logs=recentLogs();
+ const low=logs.filter(l=>l.energy<=2).length;
+ return low>=3?`Heavier week with ${low} low-energy days.`:"Week looks stable.";
+}
+
+function update(){
+ ensureCards();
+ const t=document.getElementById('giornoTodayNarrative');
+ const w=document.getElementById('giornoCrashWhy');
+ const p=document.getElementById('giornoPatternList');
+ const wk=document.getElementById('giornoWeekSummary');
+ if(t)t.textContent=buildToday();
+ if(w)w.innerHTML=buildWhy();
+ if(p)p.innerHTML=buildPatterns();
+ if(wk)wk.textContent=buildWeek();
+}
+
+window.addEventListener('load',()=>setTimeout(update,300));
+
 })();
 </script>
 
