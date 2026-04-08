@@ -1,13 +1,16 @@
 import express from 'express';
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 import pg from 'pg';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import passport from 'passport';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
+import crypto from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
+const PgSession = connectPgSimple(session);
 const PORT = process.env.PORT || 5000;
 
 const app = express();
@@ -20,7 +23,11 @@ const pool = new Pool({
       : false
 });
 
-// ---------- HELPERS ----------
+function isAuthenticated(req, res, next) {
+  if (req.isAuthenticated && req.isAuthenticated()) return next();
+  return res.status(401).json({ message: 'Unauthorized' });
+}
+
 function toNumberOrNull(value, decimals = null) {
   if (value === null || value === undefined || value === '') return null;
 
@@ -44,71 +51,56 @@ function toNumberOrNull(value, decimals = null) {
   return num;
 }
 
-function makeToken() {
-  return crypto.randomBytes(32).toString('hex');
+async function getLatestUserDataValue(userId, key) {
+  const result = await pool.query(
+    `
+    SELECT value
+    FROM user_data
+    WHERE user_id = $1 AND key = $2
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+    `,
+    [userId, key]
+  );
+
+  return result.rows[0]?.value ?? null;
 }
 
-function makeUserId() {
-  if (crypto.randomUUID) return crypto.randomUUID();
-  return crypto.randomBytes(16).toString('hex');
+async function saveUserDataValue(userId, key, value) {
+  await pool.query(
+    `
+    INSERT INTO user_data (user_id, key, value)
+    VALUES ($1, $2, $3)
+    `,
+    [userId, key, JSON.stringify(value)]
+  );
 }
 
-function normalizeUsername(username) {
-  return String(username || '').trim().toLowerCase();
-}
-
-function sanitizeUser(row) {
-  if (!row) return null;
-  return {
-    id: row.id,
-    username: row.username,
-    email: row.email || null,
-    is_paid: !!row.is_paid,
-    is_owner: !!row.is_owner,
-    created_at: row.created_at,
-    updated_at: row.updated_at
-  };
-}
-
-async function requireAuth(req, res, next) {
-  try {
-    const token = req.headers['x-access-token'];
-
-    if (!token || typeof token !== 'string') {
-      return res.status(401).json({ message: 'Missing token' });
-    }
-
+async function resolveShortcutUser({ token, userId }) {
+  if (token) {
     const result = await pool.query(
       `
-      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
-      FROM users
-      WHERE auth_token = $1
+      SELECT user_id
+      FROM user_data
+      WHERE key = 'shortcut_token' AND value = to_jsonb($1::text)
+      ORDER BY created_at DESC, id DESC
       LIMIT 1
       `,
       [token]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-
-    req.user = sanitizeUser(result.rows[0]);
-    req.authToken = token;
-    return next();
-  } catch (err) {
-    console.error('Auth error:', err);
-    return res.status(500).json({ message: 'Authentication failed' });
+    return result.rows[0]?.user_id ?? null;
   }
-}
 
-// ---------- DB INIT + MIGRATION ----------
+  if (userId && typeof userId === 'string') {
+    return userId;
+  }
+
+  return null;
+}
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id VARCHAR PRIMARY KEY,
-      username TEXT UNIQUE,
-      password_hash TEXT,
-      auth_token TEXT UNIQUE,
       email VARCHAR UNIQUE,
       first_name VARCHAR,
       last_name VARCHAR,
@@ -119,26 +111,6 @@ async function initDb() {
     );
   `);
 
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT;`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_token TEXT;`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_owner BOOLEAN DEFAULT FALSE;`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();`);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_idx
-    ON users (username)
-    WHERE username IS NOT NULL;
-  `);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS users_auth_token_unique_idx
-    ON users (auth_token)
-    WHERE auth_token IS NOT NULL;
-  `);
-
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_data (
       id SERIAL PRIMARY KEY,
@@ -147,21 +119,6 @@ async function initDb() {
       value JSONB,
       created_at TIMESTAMP DEFAULT NOW()
     );
-  `);
-
-  await pool.query(`
-    ALTER TABLE user_data
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_user_data_user_created
-    ON user_data(user_id, created_at DESC);
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_user_data_user_key
-    ON user_data(user_id, key);
   `);
 
   await pool.query(`
@@ -176,15 +133,24 @@ async function initDb() {
     );
   `);
 
-  await pool.query(`ALTER TABLE shortcut_readings ADD COLUMN IF NOT EXISTS id BIGINT;`);
-  await pool.query(`ALTER TABLE shortcut_readings ADD COLUMN IF NOT EXISTS entry_time TIMESTAMP DEFAULT NOW();`);
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ADD COLUMN IF NOT EXISTS id BIGINT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ADD COLUMN IF NOT EXISTS entry_time TIMESTAMP DEFAULT NOW();
+  `);
 
   await pool.query(`
     DO $$
     BEGIN
       IF NOT EXISTS (
-        SELECT 1 FROM pg_class
-        WHERE relkind = 'S' AND relname = 'shortcut_readings_id_seq'
+        SELECT 1
+        FROM pg_class
+        WHERE relkind = 'S'
+          AND relname = 'shortcut_readings_id_seq'
       ) THEN
         CREATE SEQUENCE shortcut_readings_id_seq;
       END IF;
@@ -192,13 +158,25 @@ async function initDb() {
     $$;
   `);
 
-  await pool.query(`ALTER SEQUENCE shortcut_readings_id_seq OWNED BY shortcut_readings.id;`);
-  await pool.query(`ALTER TABLE shortcut_readings ALTER COLUMN id SET DEFAULT nextval('shortcut_readings_id_seq');`);
-  await pool.query(`UPDATE shortcut_readings SET id = nextval('shortcut_readings_id_seq') WHERE id IS NULL;`);
+  await pool.query(`
+    ALTER SEQUENCE shortcut_readings_id_seq OWNED BY shortcut_readings.id;
+  `);
+
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ALTER COLUMN id SET DEFAULT nextval('shortcut_readings_id_seq');
+  `);
+
+  await pool.query(`
+    UPDATE shortcut_readings
+    SET id = nextval('shortcut_readings_id_seq')
+    WHERE id IS NULL;
+  `);
+
   await pool.query(`
     SELECT setval(
       'shortcut_readings_id_seq',
-      GREATEST(COALESCE((SELECT MAX(id) FROM shortcut_readings), 1), 1),
+      COALESCE((SELECT MAX(id) FROM shortcut_readings), 1),
       true
     );
   `);
@@ -207,7 +185,9 @@ async function initDb() {
     DO $$
     BEGIN
       IF EXISTS (
-        SELECT 1 FROM pg_constraint WHERE conname = 'shortcut_readings_pkey'
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'shortcut_readings_pkey'
       ) THEN
         ALTER TABLE shortcut_readings DROP CONSTRAINT shortcut_readings_pkey;
       END IF;
@@ -215,13 +195,18 @@ async function initDb() {
     $$;
   `);
 
-  await pool.query(`ALTER TABLE shortcut_readings ALTER COLUMN id SET NOT NULL;`);
+  await pool.query(`
+    ALTER TABLE shortcut_readings
+    ALTER COLUMN id SET NOT NULL;
+  `);
 
   await pool.query(`
     DO $$
     BEGIN
       IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint WHERE conname = 'shortcut_readings_id_pkey'
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'shortcut_readings_id_pkey'
       ) THEN
         ALTER TABLE shortcut_readings ADD PRIMARY KEY (id);
       END IF;
@@ -234,42 +219,36 @@ async function initDb() {
     ON shortcut_readings(user_id, date);
   `);
 
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_shortcut_readings_user_entry_time
-    ON shortcut_readings(user_id, entry_time DESC);
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS support_requests (
-      id SERIAL PRIMARY KEY,
-      user_id VARCHAR,
-      username TEXT,
-      request_type TEXT NOT NULL,
-      message TEXT NOT NULL,
-      user_agent TEXT,
-      page TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
-
-  await pool.query(`
-    ALTER TABLE support_requests
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_support_requests_created
-    ON support_requests(created_at DESC);
-  `);
-
   console.log('Database ready');
 }
-
-// ---------- APP SETUP ----------
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 
-// ---------- HEALTHCHECK ----------
+app.use(
+  session({
+    store: new PgSession({
+      pool,
+      tableName: 'sessions',
+      createTableIfMissing: true
+    }),
+    secret: process.env.SESSION_SECRET || 'giorno-dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    }
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, cb) => cb(null, user));
+passport.deserializeUser((user, cb) => cb(null, user));
+
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -280,285 +259,95 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// ---------- AUTH ----------
-app.post('/api/signup', async (req, res) => {
+app.get('/api/login', async (req, res) => {
   try {
-    const username = normalizeUsername(req.body?.username);
-    const emailRaw = String(req.body?.email || '').trim().toLowerCase();
-    const email = emailRaw || null;
-    const password = String(req.body?.password || '');
-
-    if (!username) {
-      return res.status(400).json({ message: 'Username is required' });
-    }
-
-    if (username.length < 3 || username.length > 40) {
-      return res.status(400).json({ message: 'Username must be 3-40 characters' });
-    }
-
-    if (!/^[a-z0-9._-]+$/.test(username)) {
-      return res.status(400).json({
-        message: 'Username can only contain letters, numbers, dots, underscores, and dashes'
-      });
-    }
-
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: 'Enter a valid email address' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    }
-
-    const existing = await pool.query(
-      `SELECT id FROM users WHERE username = $1 OR ($2::text IS NOT NULL AND email = $2) LIMIT 1`,
-      [username, email]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ message: 'Username or email already exists' });
-    }
-
-    const id = makeUserId();
-    const passwordHash = await bcrypt.hash(password, 10);
-    const token = makeToken();
-
-    const result = await pool.query(
-      `
-      INSERT INTO users (
-        id, username, email, password_hash, auth_token,
-        is_paid, is_owner, created_at, updated_at
-      )
-      VALUES ($1, $2, $3, $4, $5, FALSE, FALSE, NOW(), NOW())
-      RETURNING id, username, email, auth_token, is_paid, is_owner, created_at, updated_at
-      `,
-      [id, username, email, passwordHash, token]
-    );
-
-    const user = sanitizeUser(result.rows[0]);
-
-    return res.json({ ok: true, token, user });
-  } catch (err) {
-    console.error('Signup error:', err);
-    return res.status(500).json({ message: 'Signup failed', detail: err.message });
-  }
-});
-
-app.post('/api/login', async (req, res) => {
-  try {
-    const identifier = String(req.body?.username || req.body?.email || '').trim().toLowerCase();
-    const password = String(req.body?.password || '');
-
-    if (!identifier || !password) {
-      return res.status(400).json({ message: 'Username/email and password are required' });
-    }
-
-    const result = await pool.query(
-      `
-      SELECT id, username, email, password_hash, is_paid, is_owner, created_at, updated_at
-      FROM users
-      WHERE username = $1 OR email = $1
-      LIMIT 1
-      `,
-      [identifier]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid login' });
-    }
-
-    const user = result.rows[0];
-
-    if (!user.password_hash) {
-      return res.status(400).json({ message: 'This account does not have a password set yet' });
-    }
-
-    const valid = await bcrypt.compare(password, user.password_hash);
-
-    if (!valid) {
-      return res.status(401).json({ message: 'Invalid login' });
-    }
-
-    const token = makeToken();
+    const user = {
+      id: 'stephanie',
+      email: 'stephaniebarchiesi@gmail.com',
+      first_name: 'Stephanie',
+      last_name: 'Barchiesi',
+      is_paid: true,
+      is_owner: true
+    };
 
     await pool.query(
-      `UPDATE users SET auth_token = $1, updated_at = NOW() WHERE id = $2`,
-      [token, user.id]
+      `
+      INSERT INTO users (id, email, first_name, last_name, is_paid, is_owner, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        is_paid = EXCLUDED.is_paid,
+        is_owner = EXCLUDED.is_owner,
+        updated_at = NOW()
+      `,
+      [
+        user.id,
+        user.email,
+        user.first_name,
+        user.last_name,
+        user.is_paid,
+        user.is_owner
+      ]
     );
 
-    return res.json({
-      ok: true,
-      token,
-      user: sanitizeUser({ ...user, updated_at: new Date() })
+    req.logIn(user, (err) => {
+      if (err) {
+        console.error('Login error:', err);
+        return res.status(500).json({ message: 'Login failed' });
+      }
+
+      return res.json({ ok: true, user });
     });
   } catch (err) {
-    console.error('Login error:', err);
-    return res.status(500).json({ message: 'Login failed', detail: err.message });
+    console.error('Login route error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
-app.post('/api/request-password-reset', async (req, res) => {
-  try {
-    const identifier = String(req.body?.username || req.body?.email || req.body?.identifier || '').trim().toLowerCase();
-
-    if (!identifier) {
-      return res.status(400).json({ message: 'Username or email is required' });
+app.get('/api/logout', (req, res) => {
+  req.logout?.((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ message: 'Logout failed' });
     }
 
-    const result = await pool.query(
-      `
-      SELECT id, username, email
-      FROM users
-      WHERE username = $1 OR email = $1
-      LIMIT 1
-      `,
-      [identifier]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'No account found for that username or email' });
-    }
-
-    const user = result.rows[0];
-    const resetToken = makeToken();
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
-
-    await pool.query(
-      `
-      UPDATE users
-      SET reset_token = $1, reset_token_expires_at = $2, updated_at = NOW()
-      WHERE id = $3
-      `,
-      [resetToken, expiresAt.toISOString(), user.id]
-    );
-
-    const origin = `${req.protocol}://${req.get('host')}`;
-    const resetUrl = `${origin}/?reset_token=${encodeURIComponent(resetToken)}`;
-
-    return res.json({
-      ok: true,
-      message: 'Reset link created',
-      reset_url: resetUrl,
-      expires_at: expiresAt.toISOString()
+    req.session.destroy(() => {
+      return res.json({ ok: true });
     });
-  } catch (err) {
-    console.error('Password reset request error:', err);
-    return res.status(500).json({ message: 'Could not create reset link', detail: err.message });
-  }
+  });
 });
-
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/shortcut-token', isAuthenticated, async (req, res) => {
   try {
-    const token = String(req.body?.token || '').trim();
-    const password = String(req.body?.password || '');
-
-    if (!token || !password) {
-      return res.status(400).json({ message: 'Token and new password are required' });
+    const userId = req.user.id;
+    const existing = await getLatestUserDataValue(userId, 'shortcut_token');
+    if (typeof existing === 'string' && existing) {
+      return res.json({ ok: true, token: existing });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    }
-
-    const result = await pool.query(
-      `
-      SELECT id, username, email, is_paid, is_owner, created_at, updated_at, reset_token_expires_at
-      FROM users
-      WHERE reset_token = $1
-      LIMIT 1
-      `,
-      [token]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid reset token' });
-    }
-
-    const user = result.rows[0];
-    const expiresAt = user.reset_token_expires_at ? new Date(user.reset_token_expires_at) : null;
-
-    if (!expiresAt || expiresAt.getTime() < Date.now()) {
-      return res.status(400).json({ message: 'Reset token expired' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const authToken = makeToken();
-
-    await pool.query(
-      `
-      UPDATE users
-      SET password_hash = $1,
-          auth_token = $2,
-          reset_token = NULL,
-          reset_token_expires_at = NULL,
-          updated_at = NOW()
-      WHERE id = $3
-      `,
-      [passwordHash, authToken, user.id]
-    );
-
-    return res.json({
-      ok: true,
-      token: authToken,
-      user: sanitizeUser({ ...user, updated_at: new Date() })
-    });
+    const token = 'giorno_' + crypto.randomBytes(16).toString('hex');
+    await saveUserDataValue(userId, 'shortcut_token', token);
+    return res.json({ ok: true, token });
   } catch (err) {
-    console.error('Reset password error:', err);
-    return res.status(500).json({ message: 'Could not reset password', detail: err.message });
+    console.error('Shortcut token error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
-app.post('/api/logout', requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      `UPDATE users SET auth_token = NULL, updated_at = NOW() WHERE id = $1`,
-      [req.user.id]
-    );
-
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('Logout error:', err);
-    return res.status(500).json({ message: 'Logout failed', detail: err.message });
-  }
-});
-
-app.get('/api/me', requireAuth, async (req, res) => {
-  return res.json({ ok: true, user: req.user });
-});
-
-// NEW: delete account and all synced data
-app.delete('/api/account', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    await client.query(`DELETE FROM user_data WHERE user_id = $1`, [req.user.id]);
-    await client.query(`DELETE FROM shortcut_readings WHERE user_id = $1`, [req.user.id]);
-    await client.query(`DELETE FROM users WHERE id = $1`, [req.user.id]);
-
-    await client.query('COMMIT');
-    return res.json({ ok: true });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Delete account error:', err);
-    return res.status(500).json({ message: 'Delete account failed', detail: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// ---------- SHORTCUT ROUTE ----------
-app.post('/shortcut', requireAuth, async (req, res) => {
+app.post('/shortcut', async (req, res) => {
   console.log('SHORTCUT BODY:', JSON.stringify(req.body, null, 2));
 
   try {
-    const userId = req.user.id;
-    const { hrv, hr, sleep, date } = req.body || {};
+    const token = req.query.token || req.body.token;
+    const providedUserId = req.body.user_id;
+    const { hrv, hr, sleep } = req.body;
+    const today = new Date().toISOString().split('T')[0];
+    const userId = await resolveShortcutUser({ token, userId: providedUserId });
 
-    const safeDate =
-      typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
-        ? date
-        : new Date().toISOString().split('T')[0];
+    if (!userId) {
+      return res.status(400).json({ message: 'Missing or invalid shortcut token/user_id' });
+    }
 
     const hrvNum = toNumberOrNull(hrv, 1);
     const hrNum = toNumberOrNull(hr, 1);
@@ -579,22 +368,71 @@ app.post('/shortcut', requireAuth, async (req, res) => {
       INSERT INTO shortcut_readings (user_id, date, entry_time, hrv, hr, sleep)
       VALUES ($1, $2, NOW(), $3, $4, $5)
       `,
-      [userId, safeDate, hrvNum, hrNum, sleepNum]
+      [userId, today, hrvNum, hrNum, sleepNum]
     );
 
     return res.json({
       ok: true,
-      saved: { user_id: userId, date: safeDate, hrv: hrvNum, hr: hrNum, sleep: sleepNum }
+      saved: {
+        user_id: userId,
+        date: today,
+        hrv: hrvNum,
+        hr: hrNum,
+        sleep: sleepNum
+      }
     });
   } catch (err) {
     console.error('Shortcut error full:', err);
+    return res.status(500).json({
+      message: 'Server error',
+      detail: err.message
+    });
+  }
+});
+app.get('/shortcut-data', isAuthenticated, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT user_id, date, entry_time, hrv, hr, sleep
+      FROM shortcut_readings
+      WHERE user_id = $1
+      ORDER BY date DESC, entry_time DESC
+      LIMIT 1
+      `,
+      [req.user.id]
+    );
+
+    return res.json(result.rows[0] || {});
+  } catch (err) {
+    console.error('Shortcut data fetch error:', err);
     return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
 
-// ---------- USER DATA ----------
-app.get('/api/data', requireAuth, async (req, res) => {
+app.get('/shortcut-history', isAuthenticated, async (req, res) => {
   try {
+    const result = await pool.query(
+      `
+      SELECT user_id, date, entry_time, hrv, hr, sleep
+      FROM shortcut_readings
+      WHERE user_id = $1
+      ORDER BY date DESC, entry_time DESC
+      LIMIT 20
+      `,
+      [req.user.id]
+    );
+
+    return res.json(result.rows);
+  } catch (err) {
+    console.error('Shortcut history fetch error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+});
+
+app.get('/api/data', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
     const result = await pool.query(
       `
       SELECT id, key, value, created_at
@@ -602,7 +440,7 @@ app.get('/api/data', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [req.user.id]
+      [userId]
     );
 
     return res.json(result.rows);
@@ -612,8 +450,9 @@ app.get('/api/data', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/data', requireAuth, async (req, res) => {
+app.post('/api/data', isAuthenticated, async (req, res) => {
   try {
+    const userId = req.user.id;
     const updates = req.body;
 
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
@@ -622,8 +461,11 @@ app.post('/api/data', requireAuth, async (req, res) => {
 
     for (const [key, value] of Object.entries(updates)) {
       await pool.query(
-        `INSERT INTO user_data (user_id, key, value) VALUES ($1, $2, $3)`,
-        [req.user.id, key, JSON.stringify(value)]
+        `
+        INSERT INTO user_data (user_id, key, value)
+        VALUES ($1, $2, $3)
+        `,
+        [userId, key, JSON.stringify(value)]
       );
     }
 
@@ -633,10 +475,12 @@ app.post('/api/data', requireAuth, async (req, res) => {
     return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
+server.js chunk 6
 
-// ---------- HISTORY ----------
-app.get('/history', requireAuth, async (req, res) => {
+app.get('/history', isAuthenticated, async (req, res) => {
   try {
+    const userId = req.user.id;
+
     const readingsResult = await pool.query(
       `
       SELECT *
@@ -644,7 +488,7 @@ app.get('/history', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY date DESC, entry_time DESC
       `,
-      [req.user.id]
+      [userId]
     );
 
     const logsResult = await pool.query(
@@ -654,7 +498,7 @@ app.get('/history', requireAuth, async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [req.user.id]
+      [userId]
     );
 
     return res.json({
@@ -667,185 +511,42 @@ app.get('/history', requireAuth, async (req, res) => {
   }
 });
 
-
-
-// ---------- SUPPORT / FEEDBACK / EXPORT ----------
-async function optionalAuthUserFromHeader(req) {
-  try {
-    const token = req.headers['x-access-token'];
-    if (!token || typeof token !== 'string') return null;
-
-    const result = await pool.query(
-      `
-      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
-      FROM users
-      WHERE auth_token = $1
-      LIMIT 1
-      `,
-      [token]
-    );
-
-    if (!result.rows.length) return null;
-    return sanitizeUser(result.rows[0]);
-  } catch (err) {
-    console.error('Optional auth lookup error:', err);
-    return null;
-  }
-}
-
-app.post('/api/feedback', async (req, res) => {
-  try {
-    const user = await optionalAuthUserFromHeader(req);
-    const type = String(req.body?.type || 'general').slice(0, 40);
-    const text = String(req.body?.text || '').trim();
-    const userAgent = String(req.body?.userAgent || req.headers['user-agent'] || '').slice(0, 500);
-    const page = String(req.body?.page || '').slice(0, 200);
-
-    if (!text) {
-      return res.status(400).json({ message: 'Feedback text is required' });
-    }
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS support_requests (
-        id SERIAL PRIMARY KEY,
-        user_id VARCHAR,
-        username TEXT,
-        request_type TEXT NOT NULL,
-        message TEXT NOT NULL,
-        user_agent TEXT,
-        page TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-    await pool.query(
-      `
-      INSERT INTO support_requests (user_id, username, request_type, message, user_agent, page)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      `,
-      [user?.id || null, user?.username || null, type, text, userAgent, page]
-    );
-
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('Feedback error:', err);
-    return res.status(500).json({ message: 'Could not send feedback', detail: err.message });
-  }
-});
-
-app.post('/api/request-password-reset', async (req, res) => {
-  try {
-    const username = normalizeUsername(req.body?.username);
-    const note = String(req.body?.note || '').trim();
-
-    if (!username) {
-      return res.status(400).json({ message: 'Username is required' });
-    }
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS support_requests (
-        id SERIAL PRIMARY KEY,
-        user_id VARCHAR,
-        username TEXT,
-        request_type TEXT NOT NULL,
-        message TEXT NOT NULL,
-        user_agent TEXT,
-        page TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-    const userLookup = await pool.query(
-      `SELECT id, username FROM users WHERE username = $1 LIMIT 1`,
-      [username]
-    );
-
-    const found = userLookup.rows[0] || null;
-
-    await pool.query(
-      `
-      INSERT INTO support_requests (user_id, username, request_type, message, user_agent, page)
-      VALUES ($1, $2, 'password_reset', $3, $4, $5)
-      `,
-      [
-        found?.id || null,
-        username,
-        note || 'User requested a password reset from the app.',
-        String(req.headers['user-agent'] || '').slice(0, 500),
-        'auth_overlay'
-      ]
-    );
-
-    return res.json({
-      ok: true,
-      message: 'Password reset request received. For testers, the developer will handle reset requests manually.'
-    });
-  } catch (err) {
-    console.error('Password reset request error:', err);
-    return res.status(500).json({ message: 'Could not submit password reset request', detail: err.message });
-  }
-});
-
-app.get('/api/export', requireAuth, async (req, res) => {
-  try {
-    const userResult = await pool.query(
-      `
-      SELECT id, username, email, is_paid, is_owner, created_at, updated_at
-      FROM users
-      WHERE id = $1
-      LIMIT 1
-      `,
-      [req.user.id]
-    );
-
-    const userDataResult = await pool.query(
-      `
-      SELECT key, value, created_at
-      FROM user_data
-      WHERE user_id = $1
-      ORDER BY created_at ASC
-      `,
-      [req.user.id]
-    );
-
-    const shortcutResult = await pool.query(
-      `
-      SELECT date, entry_time, hrv, hr, sleep
-      FROM shortcut_readings
-      WHERE user_id = $1
-      ORDER BY date ASC, entry_time ASC
-      `,
-      [req.user.id]
-    );
-
-    return res.json({
-      ok: true,
-      exported_at: new Date().toISOString(),
-      user: sanitizeUser(userResult.rows[0]),
-      user_data: userDataResult.rows,
-      shortcut_readings: shortcutResult.rows
-    });
-  } catch (err) {
-    console.error('Export error:', err);
-    return res.status(500).json({ message: 'Could not export account data', detail: err.message });
-  }
-});
-
-// ---------- HOME ----------
 app.get('/', (req, res) => {
   const filePath = join(__dirname, 'giorno.html');
 
   try {
-    const html = readFileSync(filePath, 'utf8');
-    res.setHeader('Content-Type', 'text/html');
-    return res.send(html);
+    let html = readFileSync(filePath, 'utf8');
   } catch (err) {
     console.error('HTML read error:', err);
     return res.status(404).send('giorno.html not found');
   }
+
+  const sendHtml = async () => {
+    try {
+      let html = readFileSync(filePath, 'utf8');
+
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        const shortcutToken = await getLatestUserDataValue(req.user.id, 'shortcut_token');
+        const user = { ...req.user, shortcutToken: typeof shortcutToken === 'string' ? shortcutToken : null };
+        const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};</script>`;
+        const headClose = html.indexOf('</head>');
+
+        if (headClose !== -1) {
+          html = html.slice(0, headClose) + injection + html.slice(headClose);
+        }
+      }
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(html);
+    } catch (err) {
+      console.error('HTML read/inject error:', err);
+      return res.status(500).send('Could not load giorno.html');
+    }
+  };
+
+  return sendHtml();
 });
 
-// ---------- START ----------
 initDb()
   .then(() => {
     app.listen(PORT, () => {
