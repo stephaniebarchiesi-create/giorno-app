@@ -267,7 +267,7 @@ app.get('/api/login', async (req, res) => {
       id: 'stephanie',
       email: 'stephaniebarchiesi@gmail.com',
       first_name: 'Stephanie',
-      last_name: 'Barchiesi',
+      last_name: '',
       is_paid: true,
       is_owner: true
     };
