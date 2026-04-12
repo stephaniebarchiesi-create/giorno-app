@@ -97,6 +97,7 @@ async function resolveShortcutUser({ token, userId }) {
 
   return null;
 }
+
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -221,6 +222,7 @@ async function initDb() {
 
   console.log('Database ready');
 }
+
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 
@@ -318,6 +320,7 @@ app.get('/api/logout', (req, res) => {
     });
   });
 });
+
 app.post('/api/shortcut-token', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -389,6 +392,7 @@ app.post('/shortcut', async (req, res) => {
     });
   }
 });
+
 app.get('/shortcut-data', isAuthenticated, async (req, res) => {
   try {
     const result = await pool.query(
@@ -475,7 +479,6 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
     return res.status(500).json({ message: 'Server error', detail: err.message });
   }
 });
-server.js chunk 6
 
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
