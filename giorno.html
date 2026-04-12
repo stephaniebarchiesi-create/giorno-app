@@ -191,6 +191,14 @@
   /* Sections */
   .section { display: none; padding: 0 20px; }
   .section.active { display: block; }
+  .section-footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.4px;
+    margin: 22px 0 8px;
+    padding-bottom: 6px;
+  }
 
 
   /* Cards */
@@ -5273,6 +5281,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWeather();
   renderJournal();
   initNewFeatures();
+  injectSectionFooters();
   initPEM();
   initTriggers();
   initCaregiver();
@@ -9658,6 +9667,16 @@ function initNewFeatures() {
   }
 }
 
+
+function injectSectionFooters() {
+  document.querySelectorAll('.section').forEach(section => {
+    if (section.querySelector('.section-footer')) return;
+    const footer = document.createElement('div');
+    footer.className = 'section-footer';
+    footer.textContent = 'Created by Giorno Insights';
+    section.appendChild(footer);
+  });
+}
 
 // ---- WELCOME BACK ----
 function showWelcomeBack() {
