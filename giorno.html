@@ -226,6 +226,23 @@
     color: var(--text);
   }
 
+  @media (min-width: 980px) {
+    .nav {
+      flex-wrap: wrap;
+      overflow-x: visible;
+      justify-content: center;
+      padding-bottom: 14px;
+    }
+    .nav-wrap::before,
+    .nav-wrap::after {
+      display: none;
+    }
+    .nav-scroll-hint,
+    .nav-wrap.show-scroll-hint .nav-scroll-hint {
+      display: none;
+    }
+  }
+
 
   /* Sections */
   .section { display: none; padding: 0 20px; }
