@@ -2801,27 +2801,15 @@
   <div class="nav-wrap" id="navWrap">
     <div class="nav" id="topNav">
       <button class="nav-btn active" onclick="showSection('log')">Today</button>
-      <button class="nav-btn" onclick="showSection('meds')">My Meds</button>
-      <button class="nav-btn" onclick="showSection('checklist')">Checklist</button>
-      <button class="nav-btn" onclick="showSection('pem')">PEM Tracker</button>
-      <button class="nav-btn" onclick="showSection('pacing')">Pacing</button>
-      <button class="nav-btn" onclick="showSection('triggers')">Triggers</button>
       <button class="nav-btn" onclick="showSection('dashboard')">Insights</button>
-      <button class="nav-btn" onclick="showSection('weekly')">Weekly</button>
-      <button class="nav-btn" onclick="showSection('heatmap')">Heatmap</button>
-      <button class="nav-btn" onclick="showSection('explorer')">Explorer</button>
-      <button class="nav-btn" onclick="showSection('journal')">Journal</button>
-      <button class="nav-btn" onclick="showSection('cycle')">Cycle</button>
+      <button class="nav-btn" onclick="showSection('meds')">My Meds</button>
       <button class="nav-btn" onclick="showSection('history')">History</button>
+      <button class="nav-btn" onclick="showSection('weekly')">Weekly</button>
+      <button class="nav-btn" onclick="showSection('explorer')">Explore</button>
+      <button class="nav-btn" onclick="showSection('journal')">Journal</button>
       <button class="nav-btn" onclick="showSection('wearables')">Wearables</button>
-      <button class="nav-btn" onclick="showSection('export')">Export</button>
-      <button class="nav-btn" onclick="showSection('sync')">Sync</button>
-      <button class="nav-btn" onclick="showSection('caregiver')">Caregiver</button>
-      <button class="nav-btn" onclick="showSection('community')">Community</button>
       <button class="nav-btn" onclick="showSection('settings')">Customize</button>
       <button class="nav-btn" onclick="showSection('appinfo')">Settings</button>
-      <button class="nav-btn" onclick="showSection('science')">The Science</button>
-      <button class="nav-btn" onclick="showSection('support')">Support</button>
     </div>
     <div class="nav-scroll-hint" id="navScrollHint">
       <span>←</span><span>Swipe for more tabs</span><span>→</span>
@@ -2871,40 +2859,6 @@
     </div>
 
 
-    <div class="good-day-banner" id="goodDayBanner">
-      <div class="good-day-title">🌟 This looks like a better day</div>
-      <div class="good-day-text">You logged energy 4 or 5 — worth noting what might have helped. These records become valuable for spotting what supports you.</div>
-      <button class="good-day-btn" onclick="openGoodDayNote()">Note what helped today</button>
-    </div>
-
-    <div class="card" id="lowEnergyModeCard">
-      <div class="card-title">Low-energy mode</div>
-      <div class="card-subtitle">Shrink today's log to the essentials when you're too exhausted to do the full version</div>
-      <div class="toggle-row" style="padding-top:0;">
-        <span class="toggle-label">Use compact logging today</span>
-        <button class="toggle" id="lowEnergyToggle" onclick="toggleLowEnergyMode(this)"></button>
-      </div>
-      <div id="lowEnergyHint" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">
-        Compact mode keeps energy, core symptoms, notes, and meds visible, and hides the rest for now.
-      </div>
-    </div>
-
-    <div class="card" id="dayContextCard">
-      <div class="card-title">Today is not a normal day</div>
-      <div class="card-subtitle">Mark anything that could change how today's data should be interpreted</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="dayContextRow">
-        <button class="journal-mood-btn" onclick="toggleDayContext('flare',this)">⚡ Flare</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('infection',this)">🤒 Sick / infection</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('travel',this)">✈️ Travel</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('appointment',this)">🏥 Appointment</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('period',this)">🩸 Period</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('weather',this)">🌦️ Weather shift</button>
-        <button class="journal-mood-btn" onclick="toggleDayContext('medchange',this)">💊 Med change</button>
-      </div>
-      <div id="dayContextSummary" style="font-size:12px;color:var(--text3);margin-top:10px;min-height:18px;"></div>
-    </div>
-
-
     <!-- Yesterday reference -->
     <div class="yesterday-ref" id="yesterdayRef" style="display:none;">
       <span style="font-size:11px;color:var(--text3);letter-spacing:0.5px;">YESTERDAY</span>
@@ -2935,24 +2889,38 @@
     </div>
 
 
-    <div class="card optional-log-card" id="bristolCard">
-      <div class="card-title">Bowel health</div>
-      <div class="section-label">Bristol stool type</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:4px;" id="bristolGrid">
-        <button class="quick-btn" data-bristol-val="1" onclick="selectBristol(1, this)" style="padding:10px 4px">
-          <span class="qb-icon">💧</span><span class="qb-label" style="font-size:11px">Type 1<br><span style="color:var(--text3);font-size:10px">Separate lumps</span></span>
-        </button>
-        <button class="quick-btn" data-bristol-val="2" onclick="selectBristol(2, this)" style="padding:10px 4px">
-          <span class="qb-icon">🪨</span><span class="qb-label" style="font-size:11px">Type 2<br><span style="color:var(--text3);font-size:10px">Lumpy sausage</span></span>
-        </button>
-        <button class="quick-btn" data-bristol-val="3" onclick="selectBristol(3, this)" style="padding:10px 4px">
-          <span class="qb-icon">✅</span><span class="qb-label" style="font-size:11px">Type 4<br><span style="color:var(--text3);font-size:10px">Smooth, soft</span></span>
-        </button>
-        <button class="quick-btn" data-bristol-val="5" onclick="selectBristol(5, this)" style="padding:10px 4px">
-          <span class="qb-icon">💦</span><span class="qb-label" style="font-size:11px">Type 7<br><span style="color:var(--text3);font-size:10px">Watery</span></span>
-        </button>
+    <div class="good-day-banner" id="goodDayBanner">
+      <div class="good-day-title">🌟 This looks like a better day</div>
+      <div class="good-day-text">You logged energy 4 or 5 — worth noting what might have helped. These records become valuable for spotting what supports you.</div>
+      <button class="good-day-btn" onclick="openGoodDayNote()">Note what helped today</button>
+    </div>
+
+
+    <div class="card">
+      <div class="card-title">💊 Medications</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Tap a dose to mark it taken or skipped — saves automatically</div>
+      <div id="medListInLog"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:12px;text-align:center;">
+        Add or edit medications →
+        <button onclick="showSection('meds')" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">My Meds</button>
       </div>
-      <div id="bristolSavedNote" style="display:none;font-size:12px;color:var(--accent3);margin-top:8px;">✓ Saved today</div>
+    </div>
+
+
+    <div class="card" id="todayNotesCard">
+      <textarea class="notes-area" id="todayNotes" placeholder="Anything else worth remembering today…"></textarea>
+      <div class="section-label" style="margin-top:12px;">Tags <span style="font-size:10px;color:var(--text3)">tap to add</span></div>
+      <div class="tag-row" id="todayTagRow">
+        <div class="tag-suggestions" id="todayTagSuggestions"></div>
+        <div class="tag-selected" id="todayTagSelected"></div>
+        <input class="tag-input" id="todayTagInput" placeholder="+ custom tag" onkeydown="if(event.key==='Enter')addTagFromInput('today')">
+      </div>
+    </div>
+
+
+    <div class="card optional-log-card" id="goodDayNoteCard" style="display:none;">
+      <div class="card-title">🌟 What helped today?</div>
+      <textarea class="notes-area" id="goodDayNotes" placeholder="e.g. slept 9 hours, stayed horizontal all morning, good weather, no appointments…"></textarea>
     </div>
 
 
@@ -3016,6 +2984,27 @@
     </div>
 
 
+    <div class="card optional-log-card" id="bristolCard">
+      <div class="card-title">Bowel health</div>
+      <div class="section-label">Bristol stool type</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:4px;" id="bristolGrid">
+        <button class="quick-btn" data-bristol-val="1" onclick="selectBristol(1, this)" style="padding:10px 4px">
+          <span class="qb-icon">💧</span><span class="qb-label" style="font-size:11px">Type 1<br><span style="color:var(--text3);font-size:10px">Separate lumps</span></span>
+        </button>
+        <button class="quick-btn" data-bristol-val="2" onclick="selectBristol(2, this)" style="padding:10px 4px">
+          <span class="qb-icon">🪨</span><span class="qb-label" style="font-size:11px">Type 2<br><span style="color:var(--text3);font-size:10px">Lumpy sausage</span></span>
+        </button>
+        <button class="quick-btn" data-bristol-val="3" onclick="selectBristol(3, this)" style="padding:10px 4px">
+          <span class="qb-icon">✅</span><span class="qb-label" style="font-size:11px">Type 4<br><span style="color:var(--text3);font-size:10px">Smooth, soft</span></span>
+        </button>
+        <button class="quick-btn" data-bristol-val="5" onclick="selectBristol(5, this)" style="padding:10px 4px">
+          <span class="qb-icon">💦</span><span class="qb-label" style="font-size:11px">Type 7<br><span style="color:var(--text3);font-size:10px">Watery</span></span>
+        </button>
+      </div>
+      <div id="bristolSavedNote" style="display:none;font-size:12px;color:var(--accent3);margin-top:8px;">✓ Saved today</div>
+    </div>
+
+
     <div class="card optional-log-card" id="epworthCard" style="display:none;">
       <div class="card-title">Epworth Sleepiness Scale</div>
       <div class="card-subtitle">Standard validated tool for daytime sleepiness · takes 2 minutes · do weekly</div>
@@ -3027,30 +3016,31 @@
     </div>
 
 
-    <div class="card" id="todayNotesCard">
-      <textarea class="notes-area" id="todayNotes" placeholder="Anything else worth remembering today…"></textarea>
-      <div class="section-label" style="margin-top:12px;">Tags <span style="font-size:10px;color:var(--text3)">tap to add</span></div>
-      <div class="tag-row" id="todayTagRow">
-        <div class="tag-suggestions" id="todayTagSuggestions"></div>
-        <div class="tag-selected" id="todayTagSelected"></div>
-        <input class="tag-input" id="todayTagInput" placeholder="+ custom tag" onkeydown="if(event.key==='Enter')addTagFromInput('today')">
+    <div class="card" id="dayContextCard">
+      <div class="card-title">Today is not a normal day</div>
+      <div class="card-subtitle">Mark anything that could change how today's data should be interpreted</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="dayContextRow">
+        <button class="journal-mood-btn" onclick="toggleDayContext('flare',this)">⚡ Flare</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('infection',this)">🤒 Sick / infection</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('travel',this)">✈️ Travel</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('appointment',this)">🏥 Appointment</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('period',this)">🩸 Period</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('weather',this)">🌦️ Weather shift</button>
+        <button class="journal-mood-btn" onclick="toggleDayContext('medchange',this)">💊 Med change</button>
       </div>
+      <div id="dayContextSummary" style="font-size:12px;color:var(--text3);margin-top:10px;min-height:18px;"></div>
     </div>
 
 
-    <div class="card optional-log-card" id="goodDayNoteCard" style="display:none;">
-      <div class="card-title">🌟 What helped today?</div>
-      <textarea class="notes-area" id="goodDayNotes" placeholder="e.g. slept 9 hours, stayed horizontal all morning, good weather, no appointments…"></textarea>
-    </div>
-
-
-    <div class="card">
-      <div class="card-title">💊 Medications</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Tap a dose to mark it taken or skipped — saves automatically</div>
-      <div id="medListInLog"></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:12px;text-align:center;">
-        Add or edit medications →
-        <button onclick="showSection('meds')" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">My Meds</button>
+    <div class="card" id="lowEnergyModeCard">
+      <div class="card-title">Low-energy mode</div>
+      <div class="card-subtitle">Shrink today's log to the essentials when you're too exhausted to do the full version</div>
+      <div class="toggle-row" style="padding-top:0;">
+        <span class="toggle-label">Use compact logging today</span>
+        <button class="toggle" id="lowEnergyToggle" onclick="toggleLowEnergyMode(this)"></button>
+      </div>
+      <div id="lowEnergyHint" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">
+        Compact mode keeps energy, core symptoms, notes, and meds visible, and hides the rest for now.
       </div>
     </div>
 
@@ -3109,35 +3099,6 @@
 
   <!-- INSIGHTS DASHBOARD -->
   <div class="section" id="section-dashboard">
-    <div class="card" id="conserveCard" style="display:none;">
-      <div class="card-title">Should you conserve energy today?</div>
-      <div id="conserveCardBody" class="insight-text"></div>
-    </div>
-
-    <div class="card" id="goodDayInsightCard" style="display:none;">
-      <div class="card-title">What seems to help on better days</div>
-      <div id="goodDayInsightContent"></div>
-    </div>
-
-    <!-- Flare prediction banner (paid) -->
-    <div class="flare-prediction-banner" id="flarePredictionBanner" style="display:none;">
-      <div class="fp-header">
-        <div class="fp-title" id="flarePredictionTitle">Tomorrow's outlook</div>
-        <div class="fp-badge" id="flarePredictionBadge">—</div>
-      </div>
-      <div class="fp-body" id="flarePredictionBody"></div>
-      <div class="fp-signals" id="flarePredictionSignals"></div>
-    </div>
-
-
-    <!-- Sleep prediction card -->
-    <div class="card" id="sleepPredictionCard" style="display:none;">
-      <div class="card-title">Based on last night's sleep</div>
-      <div id="sleepPredictionContent"></div>
-    </div>
-
-
-    <!-- Energy forecast banner -->
     <div class="forecast-banner" id="forecastBanner">
       <div class="forecast-label">Today's forecast</div>
       <div class="forecast-lights" id="forecastLights">
@@ -3148,6 +3109,44 @@
       <div class="forecast-text" id="forecastText">Log a few days to see your energy forecast</div>
     </div>
 
+    <div class="card" id="conserveCard" style="display:none;">
+      <div class="card-title">Should you conserve energy today?</div>
+      <div id="conserveCardBody" class="insight-text"></div>
+    </div>
+
+    <div class="flare-prediction-banner" id="flarePredictionBanner" style="display:none;">
+      <div class="fp-header">
+        <div class="fp-title" id="flarePredictionTitle">Tomorrow's outlook</div>
+        <div class="fp-badge" id="flarePredictionBadge">—</div>
+      </div>
+      <div class="fp-body" id="flarePredictionBody"></div>
+      <div class="fp-signals" id="flarePredictionSignals"></div>
+    </div>
+
+    <div class="card" id="sleepPredictionCard" style="display:none;">
+      <div class="card-title">Based on last night's sleep</div>
+      <div id="sleepPredictionContent"></div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-cell">
+        <span class="summary-cell-value" id="daysLogged">0</span>
+        <span class="summary-cell-label">days logged</span>
+      </div>
+      <div class="summary-cell">
+        <span class="summary-cell-value" id="avgEnergy">—</span>
+        <span class="summary-cell-label">avg energy</span>
+      </div>
+      <div class="summary-cell">
+        <span class="summary-cell-value" id="medAdherence">—</span>
+        <span class="summary-cell-label">med adherence</span>
+      </div>
+    </div>
+
+    <div class="card" id="goodDayInsightCard" style="display:none;">
+      <div class="card-title">What seems to help on better days</div>
+      <div id="goodDayInsightContent"></div>
+    </div>
 
     <div class="card">
       <div class="card-title">Autonomic Load Estimate</div>
@@ -3170,24 +3169,13 @@
       </div>
     </div>
 
-
-    <div class="summary-grid">
-      <div class="summary-cell">
-        <span class="summary-cell-value" id="daysLogged">0</span>
-        <span class="summary-cell-label">days logged</span>
-      </div>
-      <div class="summary-cell">
-        <span class="summary-cell-value" id="avgEnergy">—</span>
-        <span class="summary-cell-label">avg energy</span>
-      </div>
-      <div class="summary-cell">
-        <span class="summary-cell-value" id="medAdherence">—</span>
-        <span class="summary-cell-label">med adherence</span>
+    <div class="card">
+      <div class="card-title">7-day energy trend</div>
+      <div class="chart-area">
+        <svg class="chart-svg" id="trendChart" viewBox="0 0 440 80" preserveAspectRatio="none"></svg>
       </div>
     </div>
 
-
-    <!-- Multi-symptom chart -->
     <div class="card">
       <div class="card-title">Symptom trends — 14 days</div>
       <div class="chart-legend" id="chartLegend"></div>
@@ -3196,68 +3184,37 @@
       </div>
     </div>
 
-
-    <div class="card">
-      <div class="card-title">7-day energy trend</div>
-      <div class="chart-area">
-        <svg class="chart-svg" id="trendChart" viewBox="0 0 440 80" preserveAspectRatio="none"></svg>
-      </div>
-    </div>
-
-
-    <!-- Symptom correlations -->
     <div class="card" id="correlationCard" style="display:none;">
       <div class="card-title">Correlations noticed</div>
       <div id="correlationList"></div>
     </div>
 
-
-    <div id="insightCards">
-      <div class="insight-card">
-        <div class="insight-icon">🌱</div>
-        <div class="insight-title">Insights will grow with your data</div>
-        <div class="insight-text">After a week of logging, Giorno will start noticing patterns — like which days tend to precede crashes, or how your symptoms cluster together.</div>
-      </div>
-    </div>
-
-
-    <!-- Medication intelligence -->
     <div class="card" id="medIntelCard" style="display:none;">
       <div class="card-title">💊 Medication insights</div>
       <div id="medIntelContent"></div>
     </div>
 
+    <div class="card" id="monthCompareCard" style="display:none;">
+      <div class="card-title">📆 Month over month</div>
+      <div id="monthCompareContent"></div>
+    </div>
 
-    <!-- Diagnosis bridge (paid) -->
+    <div class="card" id="pressureInsightCard" style="display:none;">
+      <div class="card-title">🌦️ Weather correlations</div>
+      <div id="pressureInsightContent"></div>
+    </div>
+
     <div class="card" id="diagnosisBridgeCard" style="display:none;">
       <div class="card-title">🔍 Pattern recognition</div>
       <div class="card-subtitle">Your symptom patterns compared to recognised diagnostic criteria · not a diagnosis</div>
       <div id="diagnosisBridgeContent"></div>
     </div>
 
-
-    <!-- Month over month comparison -->
-    <div class="card" id="monthCompareCard" style="display:none;">
-      <div class="card-title">📆 Month over month</div>
-      <div id="monthCompareContent"></div>
-    </div>
-
-
-    <!-- Barometric pressure insights -->
-    <div class="card" id="pressureInsightCard" style="display:none;">
-      <div class="card-title">🌦️ Weather correlations</div>
-      <div id="pressureInsightContent"></div>
-    </div>
-
-
-    <!-- Share button -->
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:14px;font-weight:500;color:var(--text);">Share Giorno</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Help someone else who might need this</div>
-        </div>
-        <button class="add-btn" style="flex-shrink:0;" onclick="shareApp()">Share →</button>
+    <div id="insightCards">
+      <div class="insight-card">
+        <div class="insight-icon">🌱</div>
+        <div class="insight-title">Insights will grow with your data</div>
+        <div class="insight-text">After a week of logging, Giorno will start noticing patterns — like which days tend to precede crashes, or how your symptoms cluster together.</div>
       </div>
     </div>
   </div>
@@ -4854,6 +4811,25 @@
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-title">More tools</div>
+      <div class="card-subtitle">Less-used trackers and admin tools live here now</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+        <button class="add-btn" onclick="showSection('checklist')">Checklist</button>
+        <button class="add-btn" onclick="showSection('pem')">PEM Tracker</button>
+        <button class="add-btn" onclick="showSection('pacing')">Pacing</button>
+        <button class="add-btn" onclick="showSection('triggers')">Triggers</button>
+        <button class="add-btn" onclick="showSection('heatmap')">Heatmap</button>
+        <button class="add-btn" onclick="showSection('cycle')">Cycle</button>
+        <button class="add-btn" onclick="showSection('export')">Export</button>
+        <button class="add-btn" onclick="showSection('sync')">Sync</button>
+        <button class="add-btn" onclick="showSection('caregiver')">Caregiver</button>
+        <button class="add-btn" onclick="showSection('community')">Community</button>
+        <button class="add-btn" onclick="showSection('science')">The Science</button>
+        <button class="add-btn" onclick="showSection('support')">Support</button>
+      </div>
+    </div>
+
 
     <!-- Paid tier card -->
     <div class="card" id="paidTierCard">
@@ -4943,6 +4919,16 @@
       </div>
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);line-height:1.7;">
         Built with the help of <strong>Claude AI</strong> (Anthropic) and <strong>Replit Agent</strong>. AI was used to assist with code — all health information, design decisions, and product direction are the creator's own.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);">Share Giorno</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Help someone else who might need this</div>
+        </div>
+        <button class="add-btn" style="flex-shrink:0;" onclick="shareApp()">Share →</button>
       </div>
     </div>
 
