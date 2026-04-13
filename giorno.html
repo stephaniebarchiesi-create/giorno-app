@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Giorno — Track the patterns in your days</title>
+<title>Giorno — Track symptoms, spot patterns, plan around crashes</title>
 <script>
   (function(){
     var t=localStorage.getItem('giorno_theme');
@@ -12,7 +12,7 @@
     if(f&&f!=='normal') document.documentElement.setAttribute('data-fontsize',f);
   })();
 </script>
-<meta name="description" content="A personal symptom tracker for complex, fluctuating health conditions.">
+<meta name="description" content="Giorno helps you track energy, log symptoms, identify patterns, and predict crashes for complex, fluctuating health conditions.">
 <meta name="theme-color" content="#f5f0e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -28,8 +28,8 @@
     --card2: #f2ede3;
     --border: #d8cfc0;
     --text: #2d2820;
-    --text2: #6b6054;
-    --text3: #9c9088;
+    --text2: #554b41;
+    --text3: #7d7168;
     --accent: #7b6fa0;
     --accent2: #a08c7b;
     --accent3: #6a8f7a;
@@ -44,17 +44,17 @@
   html[data-theme="white"] {
     --bg: #ffffff; --bg2: #f5f5f5; --bg3: #ebebeb;
     --card: #ffffff; --card2: #f8f8f8; --border: #e0e0e0;
-    --text: #1a1a1a; --text2: #484848; --text3: #888888;
+    --text: #1a1a1a; --text2: #3f3f3f; --text3: #707070;
   }
   html[data-theme="soft"] {
     --bg: #eeedf5; --bg2: #e4e3ee; --bg3: #d6d5e2;
     --card: #f4f3fa; --card2: #eceaf4; --border: #ccc9d8;
-    --text: #1e1d2a; --text2: #504f62; --text3: #8988a0;
+    --text: #1e1d2a; --text2: #46455a; --text3: #726f89;
   }
   html[data-theme="dark"] {
     --bg: #1c1b1f; --bg2: #28272d; --bg3: #333239;
     --card: #242329; --card2: #2e2d33; --border: #3e3d44;
-    --text: #e8e3de; --text2: #b0a8a0; --text3: #78746e;
+    --text: #e8e3de; --text2: #c7bdb4; --text3: #958f88;
     --accent: #a094c8; --accent2: #c4aa96; --accent3: #88b09a;
     --warn: #d4a06a; --good: #88b09a;
   }
@@ -105,14 +105,117 @@
     color: var(--text);
   }
   .header-left p {
-    font-size: 13px;
-    color: var(--text3);
-    margin-top: 2px;
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 4px;
+    max-width: 280px;
+    line-height: 1.45;
   }
   .header-date {
     font-size: 12px;
-    color: var(--text3);
+    color: var(--text2);
     text-align: right;
+  }
+  .hero-panel {
+    margin: 0 20px 18px;
+    padding: 22px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background:
+      radial-gradient(circle at top left, rgba(255, 231, 184, 0.7), transparent 42%),
+      linear-gradient(135deg, rgba(214, 232, 245, 0.9), rgba(255, 239, 219, 0.96) 52%, rgba(237, 243, 229, 0.94));
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .hero-title {
+    font-family: 'Lora', serif;
+    font-size: 30px;
+    line-height: 1.08;
+    color: #2a231b;
+    margin-bottom: 10px;
+  }
+  .hero-copy {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #3e342b;
+    max-width: 42ch;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .hero-cta {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: transform 0.18s, opacity 0.18s, box-shadow 0.18s;
+  }
+  .hero-cta:hover {
+    transform: translateY(-1px);
+  }
+  .hero-cta.primary {
+    background: #2d2820;
+    color: #faf7f2;
+    box-shadow: 0 10px 20px rgba(45, 40, 32, 0.14);
+  }
+  .hero-cta.secondary {
+    background: rgba(250, 247, 242, 0.72);
+    color: #2d2820;
+    border: 1px solid rgba(45, 40, 32, 0.14);
+  }
+  .benefits-strip {
+    margin: 0 20px 18px;
+    display: grid;
+    gap: 10px;
+  }
+  .benefits-title {
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .benefits-subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 2px;
+    line-height: 1.6;
+  }
+  .benefits-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .benefit-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .benefit-icon {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .benefit-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .benefit-copy {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text2);
   }
 
 
@@ -192,18 +295,34 @@
   }
   .nav-dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 12px);
     right: 0;
-    min-width: 200px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 14px 30px rgba(45, 40, 32, 0.12);
-    padding: 8px;
+    min-width: 220px;
+    background: color-mix(in srgb, var(--card) 92%, white 8%);
+    border: 1px solid color-mix(in srgb, var(--border) 78%, white 22%);
+    border-radius: 18px;
+    box-shadow:
+      0 18px 38px rgba(45, 40, 32, 0.16),
+      0 4px 12px rgba(45, 40, 32, 0.08);
+    padding: 10px;
     display: none;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     z-index: 20;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .nav-dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 24px;
+    width: 14px;
+    height: 14px;
+    background: inherit;
+    border-top: 1px solid color-mix(in srgb, var(--border) 78%, white 22%);
+    border-left: 1px solid color-mix(in srgb, var(--border) 78%, white 22%);
+    transform: rotate(45deg);
   }
   .nav-dropdown.open .nav-dropdown-menu {
     display: flex;
@@ -216,8 +335,8 @@
     color: var(--text2);
     font-size: 13px;
     font-family: 'DM Sans', sans-serif;
-    border-radius: 12px;
-    padding: 10px 12px;
+    border-radius: 13px;
+    padding: 11px 12px;
     cursor: pointer;
   }
   .nav-dropdown-item:hover,
@@ -227,11 +346,17 @@
   }
 
   @media (min-width: 980px) {
+    .nav-wrap {
+      overflow: visible;
+    }
     .nav {
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       overflow-x: visible;
       justify-content: center;
       padding-bottom: 14px;
+    }
+    .nav-dropdown-menu {
+      top: calc(100% + 10px);
     }
     .nav-wrap::before,
     .nav-wrap::after {
@@ -240,6 +365,12 @@
     .nav-scroll-hint,
     .nav-wrap.show-scroll-hint .nav-scroll-hint {
       display: none;
+    }
+    .hero-title {
+      font-size: 36px;
+    }
+    .benefits-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
@@ -2849,9 +2980,50 @@
   <div class="header">
     <div class="header-left">
       <h1>Giorno</h1>
-      <p>your daily health companion</p>
+      <p>Track symptoms, spot patterns, and plan around crashes.</p>
     </div>
     <div class="header-date" id="headerDate"></div>
+  </div>
+
+  <div class="hero-panel">
+    <div class="hero-eyebrow">For fluctuating health conditions</div>
+    <div class="hero-title">A clearer way to track energy, symptoms, patterns, and crash risk.</div>
+    <div class="hero-copy">
+      Giorno helps you understand what your days are doing, not just how they feel in the moment. Log what matters, identify patterns over time, and make better pacing decisions before a crash hits.
+    </div>
+    <div class="hero-actions">
+      <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking</button>
+      <button class="hero-cta secondary" onclick="showSection('dashboard', 'insightsBtn')">See how Giorno helps</button>
+    </div>
+  </div>
+
+  <div class="benefits-strip">
+    <div>
+      <div class="benefits-title">What Giorno helps you do</div>
+      <div class="benefits-subtitle">A daily tracker built for people dealing with complex, variable symptoms.</div>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">⚡</div>
+        <div class="benefit-title">Track energy</div>
+        <div class="benefit-copy">Log how functional you actually are each day, from crash-level days to better ones.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🩺</div>
+        <div class="benefit-title">Log symptoms</div>
+        <div class="benefit-copy">Capture the symptoms that matter to you without turning each check-in into a chore.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🔎</div>
+        <div class="benefit-title">Identify patterns</div>
+        <div class="benefit-copy">See what your data is doing over time so trends and triggers become easier to spot.</div>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🌿</div>
+        <div class="benefit-title">Predict crashes</div>
+        <div class="benefit-copy">Use your recent energy, symptom, and sleep patterns to catch warning signs earlier.</div>
+      </div>
+    </div>
   </div>
 
   <div class="nav-wrap" id="navWrap">
@@ -5446,6 +5618,12 @@ function showSection(name, parentBtnId = null) {
   if (name === 'pacing') initPacing();
   if (name === 'triggers') renderTriggerResults();
   if (name === 'settings') syncCustomizeToggles();
+}
+
+function scrollToStartTracking() {
+  showSection('log');
+  const firstCard = document.querySelector('#section-log .card');
+  if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleNavMenu(dropdownId, e) {
