@@ -199,6 +199,15 @@
     margin: 22px 0 8px;
     padding-bottom: 6px;
   }
+  .section-footer a {
+    color: var(--text3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .section-footer a:hover {
+    color: var(--text2);
+  }
 
 
   /* Cards */
@@ -4914,77 +4923,6 @@
 
 
     <div class="card">
-      <div class="card-title">☕ Support Giorno</div>
-      <div class="card-subtitle">Completely optional — Giorno will always be free</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
-        If Giorno has been useful to you and you'd like to say thank you, you're welcome to buy me a coffee. It genuinely helps me keep developing it.
-      </div>
-      <button class="add-btn" style="opacity:0.5;cursor:default;" disabled>Ko-fi support link — coming soon</button>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;">No account needed · one-time · any amount</div>
-    </div>
-
-
-    <div class="card">
-      <div class="card-title">What's new in Giorno</div>
-      <div id="changelogList">
-        <div class="changelog-entry open">
-          <div class="changelog-header" onclick="this.closest('.changelog-entry').classList.toggle('open')">
-            <div class="changelog-header-left">
-              <div class="changelog-version">Version 1.6</div>
-              <div class="changelog-date">March 2026</div>
-            </div>
-            <span class="changelog-arrow">▼</span>
-          </div>
-          <div class="changelog-items">
-            <div class="changelog-item">✂️ Customize and Settings split into separate tabs</div>
-            <div class="changelog-item">⚙️ Settings now persist correctly across sessions</div>
-            <div class="changelog-item">🔐 Full account sync — your data follows you when signed in</div>
-            <div class="changelog-item">👤 About the creator card added to Settings</div>
-            <div class="changelog-item">⌚ Wearable sleep data no longer overwrites manual entries</div>
-            <div class="changelog-item">⏰ Reminder time selection now stays highlighted after reload</div>
-          </div>
-        </div>
-        <div class="changelog-entry">
-          <div class="changelog-header" onclick="this.closest('.changelog-entry').classList.toggle('open')">
-            <div class="changelog-header-left">
-              <div class="changelog-version">Version 1.5</div>
-              <div class="changelog-date">March 2026</div>
-            </div>
-            <span class="changelog-arrow">▼</span>
-          </div>
-          <div class="changelog-items">
-            <div class="changelog-item">📲 Progressive Web App — install to home screen</div>
-            <div class="changelog-item">🗓️ Heatmap calendar — a year at a glance</div>
-            <div class="changelog-item">🔍 Data explorer — ask questions about your data</div>
-            <div class="changelog-item">💊 Medication intelligence — dose timing insights</div>
-            <div class="changelog-item">📤 Shareable summary — privacy-safe snapshot</div>
-            <div class="changelog-item">📵 Offline mode — works without internet</div>
-            <div class="changelog-item">💙 Support & resources section</div>
-            <div class="changelog-item">🎓 Interactive onboarding tutorial</div>
-          </div>
-        </div>
-        <div class="changelog-entry">
-          <div class="changelog-header" onclick="this.closest('.changelog-entry').classList.toggle('open')">
-            <div class="changelog-header-left">
-              <div class="changelog-version">Version 1.4</div>
-              <div class="changelog-date">February 2026</div>
-            </div>
-            <span class="changelog-arrow">▼</span>
-          </div>
-          <div class="changelog-items">
-            <div class="changelog-item">🔵 Web Bluetooth live HRV</div>
-            <div class="changelog-item">⌚ Garmin & Fitbit auto-sync</div>
-            <div class="changelog-item">📅 Weekly summary</div>
-            <div class="changelog-item">📓 Symptom journal</div>
-            <div class="changelog-item">🌸 Cycle tracker</div>
-            <div class="changelog-item">✏️ Edit past entries</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <div class="card">
       <div class="card-title">Privacy & legal</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
         <strong>Your data stays on your device</strong> unless you choose to enable cloud sync. Giorno doesn't use analytics, advertising SDKs, or third-party trackers.<br><br>
@@ -9511,6 +9449,10 @@ function copyShareSummary() {
   navigator.clipboard.writeText(text).then(() => showToast('Summary copied to clipboard'));
 }
 
+function openSupportLink() {
+  window.open('https://ko-fi.com/giornoinsights', '_blank');
+}
+
 
 // ---- MEDICATION INTELLIGENCE ----
 function renderMedIntelligence() {
@@ -9672,7 +9614,7 @@ function injectSectionFooters() {
     if (section.querySelector('.section-footer')) return;
     const footer = document.createElement('div');
     footer.className = 'section-footer';
-    footer.textContent = 'Created by Giorno Insights';
+    footer.innerHTML = 'Created by Giorno Insights · <a href="#" onclick="openSupportLink(); return false;">Support Giorno</a>';
     section.appendChild(footer);
   });
 }
