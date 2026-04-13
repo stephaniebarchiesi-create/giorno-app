@@ -186,6 +186,45 @@
     color: var(--bg);
     border-color: var(--text);
   }
+  .nav-dropdown {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .nav-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 14px 30px rgba(45, 40, 32, 0.12);
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 20;
+  }
+  .nav-dropdown.open .nav-dropdown-menu {
+    display: flex;
+  }
+  .nav-dropdown-item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+  .nav-dropdown-item:hover,
+  .nav-dropdown-item.active {
+    background: var(--bg2);
+    color: var(--text);
+  }
 
 
   /* Sections */
@@ -2801,15 +2840,52 @@
   <div class="nav-wrap" id="navWrap">
     <div class="nav" id="topNav">
       <button class="nav-btn active" onclick="showSection('log')">Today</button>
-      <button class="nav-btn" onclick="showSection('dashboard')">Insights</button>
-      <button class="nav-btn" onclick="showSection('meds')">My Meds</button>
-      <button class="nav-btn" onclick="showSection('history')">History</button>
-      <button class="nav-btn" onclick="showSection('weekly')">Weekly</button>
-      <button class="nav-btn" onclick="showSection('explorer')">Explore</button>
-      <button class="nav-btn" onclick="showSection('journal')">Journal</button>
-      <button class="nav-btn" onclick="showSection('wearables')">Wearables</button>
-      <button class="nav-btn" onclick="showSection('settings')">Customize</button>
-      <button class="nav-btn" onclick="showSection('appinfo')">Settings</button>
+      <div class="nav-dropdown" id="insightsDropdown">
+        <button class="nav-btn" id="insightsBtn" onclick="toggleNavMenu('insightsDropdown', event)">Insights & data</button>
+        <div class="nav-dropdown-menu">
+          <button class="nav-dropdown-item" onclick="showSection('dashboard', 'insightsBtn')">Insights</button>
+          <button class="nav-dropdown-item" onclick="showSection('explorer', 'insightsBtn')">Data Explorer</button>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="logsDropdown">
+        <button class="nav-btn" id="logsBtn" onclick="toggleNavMenu('logsDropdown', event)">Logs</button>
+        <div class="nav-dropdown-menu">
+          <button class="nav-dropdown-item" onclick="showSection('history', 'logsBtn')">History</button>
+          <button class="nav-dropdown-item" onclick="showSection('journal', 'logsBtn')">Journal</button>
+          <button class="nav-dropdown-item" onclick="showSection('weekly', 'logsBtn')">Weekly</button>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="devicesDropdown">
+        <button class="nav-btn" id="devicesBtn" onclick="toggleNavMenu('devicesDropdown', event)">Devices</button>
+        <div class="nav-dropdown-menu">
+          <button class="nav-dropdown-item" onclick="showSection('wearables', 'devicesBtn')">Wearables</button>
+          <button class="nav-dropdown-item" onclick="showSection('sync', 'devicesBtn')">Sync</button>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="moreToolsDropdown">
+        <button class="nav-btn" id="moreToolsBtn" onclick="toggleNavMenu('moreToolsDropdown', event)">More tools</button>
+        <div class="nav-dropdown-menu">
+          <button class="nav-dropdown-item" onclick="showSection('meds', 'moreToolsBtn')">My Meds</button>
+          <button class="nav-dropdown-item" onclick="showSection('checklist', 'moreToolsBtn')">Checklist</button>
+          <button class="nav-dropdown-item" onclick="showSection('pem', 'moreToolsBtn')">PEM Tracker</button>
+          <button class="nav-dropdown-item" onclick="showSection('pacing', 'moreToolsBtn')">Pacing</button>
+          <button class="nav-dropdown-item" onclick="showSection('triggers', 'moreToolsBtn')">Triggers</button>
+          <button class="nav-dropdown-item" onclick="showSection('heatmap', 'moreToolsBtn')">Heatmap</button>
+          <button class="nav-dropdown-item" onclick="showSection('cycle', 'moreToolsBtn')">Cycle</button>
+          <button class="nav-dropdown-item" onclick="showSection('export', 'moreToolsBtn')">Export</button>
+          <button class="nav-dropdown-item" onclick="showSection('caregiver', 'moreToolsBtn')">Caregiver</button>
+          <button class="nav-dropdown-item" onclick="showSection('community', 'moreToolsBtn')">Community</button>
+          <button class="nav-dropdown-item" onclick="showSection('science', 'moreToolsBtn')">The Science</button>
+          <button class="nav-dropdown-item" onclick="showSection('support', 'moreToolsBtn')">Support</button>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="prefsDropdown">
+        <button class="nav-btn" id="prefsBtn" onclick="toggleNavMenu('prefsDropdown', event)">Preferences</button>
+        <div class="nav-dropdown-menu">
+          <button class="nav-dropdown-item" onclick="showSection('settings', 'prefsBtn')">Customize</button>
+          <button class="nav-dropdown-item" onclick="showSection('appinfo', 'prefsBtn')">Settings</button>
+        </div>
+      </div>
     </div>
     <div class="nav-scroll-hint" id="navScrollHint">
       <span>←</span><span>Swipe for more tabs</span><span>→</span>
@@ -3029,19 +3105,6 @@
         <button class="journal-mood-btn" onclick="toggleDayContext('medchange',this)">💊 Med change</button>
       </div>
       <div id="dayContextSummary" style="font-size:12px;color:var(--text3);margin-top:10px;min-height:18px;"></div>
-    </div>
-
-
-    <div class="card" id="lowEnergyModeCard">
-      <div class="card-title">Low-energy mode</div>
-      <div class="card-subtitle">Shrink today's log to the essentials when you're too exhausted to do the full version</div>
-      <div class="toggle-row" style="padding-top:0;">
-        <span class="toggle-label">Use compact logging today</span>
-        <button class="toggle" id="lowEnergyToggle" onclick="toggleLowEnergyMode(this)"></button>
-      </div>
-      <div id="lowEnergyHint" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">
-        Compact mode keeps energy, core symptoms, notes, and meds visible, and hides the rest for now.
-      </div>
     </div>
 
 
@@ -4811,26 +4874,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">More tools</div>
-      <div class="card-subtitle">Less-used trackers and admin tools live here now</div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-        <button class="add-btn" onclick="showSection('checklist')">Checklist</button>
-        <button class="add-btn" onclick="showSection('pem')">PEM Tracker</button>
-        <button class="add-btn" onclick="showSection('pacing')">Pacing</button>
-        <button class="add-btn" onclick="showSection('triggers')">Triggers</button>
-        <button class="add-btn" onclick="showSection('heatmap')">Heatmap</button>
-        <button class="add-btn" onclick="showSection('cycle')">Cycle</button>
-        <button class="add-btn" onclick="showSection('export')">Export</button>
-        <button class="add-btn" onclick="showSection('sync')">Sync</button>
-        <button class="add-btn" onclick="showSection('caregiver')">Caregiver</button>
-        <button class="add-btn" onclick="showSection('community')">Community</button>
-        <button class="add-btn" onclick="showSection('science')">The Science</button>
-        <button class="add-btn" onclick="showSection('support')">Support</button>
-      </div>
-    </div>
-
-
     <!-- Paid tier card -->
     <div class="card" id="paidTierCard">
       <div id="freeUserUpgrade" style="display:none;">
@@ -4868,14 +4911,17 @@
       <div class="card-title">Send feedback</div>
       <div class="card-subtitle">Something not working? An idea? We want to hear it.</div>
       <textarea class="notes-area" id="feedbackText" placeholder="Describe what happened, what you'd like to see, or anything else…" style="min-height:80px;margin-bottom:10px;"></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="feedbackTypeRow">
-        <button class="journal-mood-btn" onclick="selectFeedbackType('bug', this)">🐛 Bug</button>
-        <button class="journal-mood-btn" onclick="selectFeedbackType('idea', this)">💡 Idea</button>
-        <button class="journal-mood-btn" onclick="selectFeedbackType('question', this)">❓ Question</button>
-        <button class="journal-mood-btn" onclick="selectFeedbackType('other', this)">💬 Other</button>
-      </div>
-      <button class="add-btn" onclick="sendFeedback()">Send feedback</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;" id="feedbackTypeRow">
+      <button class="journal-mood-btn" onclick="selectFeedbackType('bug', this)">🐛 Bug</button>
+      <button class="journal-mood-btn" onclick="selectFeedbackType('idea', this)">💡 Idea</button>
+      <button class="journal-mood-btn" onclick="selectFeedbackType('question', this)">❓ Question</button>
+      <button class="journal-mood-btn" onclick="selectFeedbackType('other', this)">💬 Other</button>
     </div>
+    <button class="add-btn" onclick="sendFeedback()">Send feedback</button>
+    <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6;">
+      Or email <a href="mailto:hello@giornoinsights.com" style="color:var(--accent3);text-decoration:none;">hello@giornoinsights.com</a>
+    </div>
+  </div>
 
 
     <div class="card">
@@ -5353,16 +5399,25 @@ function loadTodayLog() {
 
 
 // ---- NAV ----
-function showSection(name) {
+function showSection(name, parentBtnId = null) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-dropdown-item').forEach(b => b.classList.remove('active'));
   const section = document.getElementById('section-' + name);
   if (!section) return;
   section.classList.add('active');
-  if (event?.target) event.target.classList.add('active');
   const nav = document.getElementById('topNav');
-  if (event?.target && nav?.contains(event.target)) {
-    event.target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  if (event?.target && nav?.contains(event.target)) event.target.classList.add('active');
+  if (parentBtnId) {
+    const parentBtn = document.getElementById(parentBtnId);
+    if (parentBtn) parentBtn.classList.add('active');
+  }
+  closeNavMenus();
+  const scrollTarget = parentBtnId
+    ? document.getElementById(parentBtnId)?.closest('.nav-dropdown')
+    : event?.target;
+  if (scrollTarget && nav?.contains(scrollTarget)) {
+    scrollTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     updateNavScrollHint();
   }
   if (name === 'dashboard') updateDashboard();
@@ -5374,6 +5429,19 @@ function showSection(name) {
   if (name === 'pacing') initPacing();
   if (name === 'triggers') renderTriggerResults();
   if (name === 'settings') syncCustomizeToggles();
+}
+
+function toggleNavMenu(dropdownId, e) {
+  e?.stopPropagation();
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
+  const opening = !dropdown.classList.contains('open');
+  closeNavMenus();
+  if (opening) dropdown.classList.add('open');
+}
+
+function closeNavMenus() {
+  document.querySelectorAll('.nav-dropdown').forEach(dropdown => dropdown.classList.remove('open'));
 }
 
 function updateNavScrollHint() {
@@ -5393,6 +5461,7 @@ function initNavScrollHint() {
   if (!nav) return;
   nav.addEventListener('scroll', updateNavScrollHint, { passive: true });
   window.addEventListener('resize', updateNavScrollHint);
+  document.addEventListener('click', () => closeNavMenus());
   requestAnimationFrame(updateNavScrollHint);
 }
 
