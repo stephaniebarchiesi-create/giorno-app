@@ -92,7 +92,7 @@
 
   /* Header */
   .header {
-    padding: 32px 20px 20px;
+    padding: 24px 20px 14px;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -117,9 +117,9 @@
     text-align: right;
   }
   .hero-panel {
-    margin: 0 20px 18px;
-    padding: 22px 20px;
-    border-radius: 20px;
+    margin: 0 20px 14px;
+    padding: 18px 18px;
+    border-radius: 18px;
     border: 1px solid var(--border);
     background:
       radial-gradient(circle at top left, rgba(255, 231, 184, 0.7), transparent 42%),
@@ -142,20 +142,25 @@
   }
   .hero-copy {
     font-size: 14px;
-    line-height: 1.65;
+    line-height: 1.58;
     color: #3e342b;
     max-width: 42ch;
   }
+  .hero-support {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4f4337;
+  }
   .hero-actions {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 18px;
+    gap: 8px;
+    margin-top: 16px;
   }
   .hero-cta {
     border: none;
     border-radius: 999px;
-    padding: 12px 18px;
+    padding: 13px 18px;
     font-size: 14px;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
@@ -168,51 +173,70 @@
     background: #2d2820;
     color: #faf7f2;
     box-shadow: 0 10px 20px rgba(45, 40, 32, 0.14);
+    font-weight: 600;
   }
-  .hero-cta.secondary {
-    background: rgba(250, 247, 242, 0.72);
-    color: #2d2820;
-    border: 1px solid rgba(45, 40, 32, 0.14);
+  .hero-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #3f352c;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
   }
-  .benefits-strip {
-    margin: 0 20px 18px;
+  .how-strip {
+    margin: 0 20px 14px;
     display: grid;
     gap: 10px;
   }
-  .benefits-title {
+  .how-title {
     font-family: 'Lora', serif;
     font-size: 18px;
     color: var(--text);
     margin-bottom: 2px;
   }
-  .benefits-subtitle {
+  .how-subtitle {
     font-size: 13px;
     color: var(--text2);
     margin-bottom: 2px;
     line-height: 1.6;
   }
-  .benefits-grid {
+  .how-grid {
     display: grid;
     gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
-  .benefit-card {
+  .how-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 14px;
+    border-radius: 14px;
+    padding: 13px 14px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: start;
   }
-  .benefit-icon {
-    font-size: 18px;
-    margin-bottom: 8px;
+  .how-step {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
   }
-  .benefit-title {
+  .how-card-title {
     font-size: 14px;
     font-weight: 600;
     color: var(--text);
     margin-bottom: 4px;
   }
-  .benefit-copy {
+  .how-card-copy {
     font-size: 12px;
     line-height: 1.55;
     color: var(--text2);
@@ -369,8 +393,52 @@
     .hero-title {
       font-size: 36px;
     }
-    .benefits-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    .how-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .how-card {
+      grid-template-columns: auto 1fr;
+      min-height: 120px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .header {
+      padding: 18px 16px 10px;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .header-left h1 {
+      font-size: 26px;
+    }
+    .header-left p {
+      font-size: 13px;
+      max-width: none;
+    }
+    .header-date {
+      font-size: 11px;
+    }
+    .hero-panel,
+    .how-strip {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+    .hero-panel {
+      padding: 16px 15px;
+    }
+    .hero-title {
+      font-size: 27px;
+      line-height: 1.12;
+      margin-bottom: 8px;
+    }
+    .hero-copy,
+    .hero-support,
+    .how-subtitle {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .nav {
+      padding: 0 16px 16px;
     }
   }
 
@@ -2980,48 +3048,52 @@
   <div class="header">
     <div class="header-left">
       <h1>Giorno</h1>
-      <p>Track symptoms, spot patterns, and plan around crashes.</p>
+      <p>A calm, low-effort health tracker for people with fatigue, symptoms, and unpredictable days.</p>
     </div>
     <div class="header-date" id="headerDate"></div>
   </div>
 
   <div class="hero-panel">
-    <div class="hero-eyebrow">For fluctuating health conditions</div>
-    <div class="hero-title">A clearer way to track energy, symptoms, patterns, and crash risk.</div>
+    <div class="hero-eyebrow">Built for low-energy days</div>
+    <div class="hero-title">Track energy and symptoms, spot patterns, and catch crash warning signs sooner.</div>
     <div class="hero-copy">
-      Giorno helps you understand what your days are doing, not just how they feel in the moment. Log what matters, identify patterns over time, and make better pacing decisions before a crash hits.
+      Giorno is for people living with fatigue, brain fog, fluctuating symptoms, PEM, dysautonomia, and other complex conditions that are hard to explain day to day.
+    </div>
+    <div class="hero-support">
+      When your energy is limited, Giorno keeps things simple: log what matters, skip what doesn't, and come back later when you have more capacity.
     </div>
     <div class="hero-actions">
-      <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking</button>
-      <button class="hero-cta secondary" onclick="showSection('dashboard', 'insightsBtn')">See how Giorno helps</button>
+      <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking with Giorno</button>
     </div>
+    <a class="hero-link" href="#" onclick="scrollToHowItWorks(); return false;">See how it works</a>
   </div>
 
-  <div class="benefits-strip">
+  <div class="how-strip" id="howItWorks">
     <div>
-      <div class="benefits-title">What Giorno helps you do</div>
-      <div class="benefits-subtitle">A daily tracker built for people dealing with complex, variable symptoms.</div>
+      <div class="how-title">How Giorno works</div>
+      <div class="how-subtitle">A simple rhythm you can keep up with, even when you don't feel good.</div>
     </div>
-    <div class="benefits-grid">
-      <div class="benefit-card">
-        <div class="benefit-icon">⚡</div>
-        <div class="benefit-title">Track energy</div>
-        <div class="benefit-copy">Log how functional you actually are each day, from crash-level days to better ones.</div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-step">1</div>
+        <div>
+          <div class="how-card-title">Track energy and symptoms</div>
+          <div class="how-card-copy">Log how you actually feel in under a minute, with space to keep it minimal on harder days.</div>
+        </div>
       </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">🩺</div>
-        <div class="benefit-title">Log symptoms</div>
-        <div class="benefit-copy">Capture the symptoms that matter to you without turning each check-in into a chore.</div>
+      <div class="how-card">
+        <div class="how-step">2</div>
+        <div>
+          <div class="how-card-title">See patterns over time</div>
+          <div class="how-card-copy">Giorno helps you notice trends in sleep, symptoms, medications, and better or worse days.</div>
+        </div>
       </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">🔎</div>
-        <div class="benefit-title">Identify patterns</div>
-        <div class="benefit-copy">See what your data is doing over time so trends and triggers become easier to spot.</div>
-      </div>
-      <div class="benefit-card">
-        <div class="benefit-icon">🌿</div>
-        <div class="benefit-title">Predict crashes</div>
-        <div class="benefit-copy">Use your recent energy, symptom, and sleep patterns to catch warning signs earlier.</div>
+      <div class="how-card">
+        <div class="how-step">3</div>
+        <div>
+          <div class="how-card-title">Plan around crashes</div>
+          <div class="how-card-copy">Use those patterns to pace earlier, understand what helps, and respond before a crash fully lands.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -5624,6 +5696,11 @@ function scrollToStartTracking() {
   showSection('log');
   const firstCard = document.querySelector('#section-log .card');
   if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToHowItWorks() {
+  const el = document.getElementById('howItWorks');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function toggleNavMenu(dropdownId, e) {
