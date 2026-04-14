@@ -125,6 +125,26 @@
       radial-gradient(circle at top left, rgba(255, 231, 184, 0.7), transparent 42%),
       linear-gradient(135deg, rgba(214, 232, 245, 0.9), rgba(255, 239, 219, 0.96) 52%, rgba(237, 243, 229, 0.94));
   }
+  .hero-shell {
+    margin: 0 20px 14px;
+  }
+  .hero-panel,
+  .hero-mini {
+    transition: opacity 0.18s ease, transform 0.18s ease, margin 0.18s ease;
+  }
+  .hero-panel.hidden,
+  .hero-mini.hidden {
+    display: none;
+  }
+  .hero-panel {
+    margin: 0;
+  }
+  .hero-panel-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
   .hero-eyebrow {
     font-size: 11px;
     letter-spacing: 0.12em;
@@ -183,6 +203,66 @@
     text-decoration: underline;
     text-underline-offset: 3px;
     cursor: pointer;
+  }
+  .hero-dismiss {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(45, 40, 32, 0.12);
+    background: rgba(255, 255, 255, 0.55);
+    color: #5b4b3e;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .hero-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background:
+      linear-gradient(135deg, rgba(214, 232, 245, 0.72), rgba(255, 239, 219, 0.86) 56%, rgba(237, 243, 229, 0.86));
+  }
+  .hero-mini-copy {
+    min-width: 0;
+  }
+  .hero-mini-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #5f5346;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .hero-mini-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #3f352c;
+  }
+  .hero-mini-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .hero-mini-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 13px;
+    background: rgba(45, 40, 32, 0.08);
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .hero-mini-btn.primary {
+    background: #2d2820;
+    color: #faf7f2;
   }
   .how-strip {
     margin: 0 20px 14px;
@@ -368,6 +448,16 @@
     background: var(--bg2);
     color: var(--text);
   }
+  .panel-launch-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.6;
+    background: color-mix(in srgb, var(--bg2) 82%, white 18%);
+    border: 1px solid color-mix(in srgb, var(--border) 76%, white 24%);
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
 
   @media (min-width: 980px) {
     .nav-wrap {
@@ -418,6 +508,7 @@
     .header-date {
       font-size: 11px;
     }
+    .hero-shell,
     .hero-panel,
     .how-strip {
       margin-left: 16px;
@@ -439,6 +530,26 @@
     }
     .nav {
       padding: 0 16px 16px;
+    }
+    .nav-dropdown-menu {
+      min-width: min(260px, calc(100vw - 24px));
+      right: auto;
+      left: 0;
+      border-radius: 16px;
+      padding: 8px;
+    }
+    .hero-mini {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .hero-mini-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .hero-mini-btn {
+      min-height: 40px;
+      padding: 10px 14px;
     }
   }
 
@@ -485,6 +596,81 @@
     color: var(--text3);
     margin-bottom: 16px;
     margin-top: -10px;
+  }
+
+  /* Floating panels for setup-heavy controls */
+  .floating-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(45, 40, 32, 0.28);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 215;
+  }
+  .floating-panel-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .floating-panel-card {
+    box-sizing: border-box;
+  }
+  .floating-panel-card.open {
+    display: block !important;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(760px, calc(100vw - 24px));
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0;
+    z-index: 220;
+    background: color-mix(in srgb, var(--card) 94%, white 6%);
+    border: 1px solid color-mix(in srgb, var(--border) 78%, white 22%);
+    box-shadow:
+      0 24px 56px rgba(45, 40, 32, 0.18),
+      0 8px 18px rgba(45, 40, 32, 0.08);
+    border-radius: 22px;
+    padding: 24px;
+    padding-right: 58px;
+  }
+  .floating-panel-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 76%, white 24%);
+    color: var(--text2);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .floating-panel-header {
+    margin-bottom: 14px;
+    padding-right: 12px;
+  }
+  .floating-panel-title {
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .floating-panel-subtitle {
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.6;
+  }
+  body.floating-panel-open {
+    overflow: hidden;
   }
 
 
@@ -1125,6 +1311,35 @@
     transition: background 0.15s;
   }
   .modal-delete-full:hover { background: #f0d5c8; }
+
+  /* Small anchored help popover */
+  .symptom-info-popover {
+    position: fixed;
+    max-width: min(320px, calc(100vw - 24px));
+    background: color-mix(in srgb, var(--card) 95%, white 5%);
+    border: 1px solid color-mix(in srgb, var(--border) 78%, white 22%);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow:
+      0 16px 34px rgba(45, 40, 32, 0.15),
+      0 4px 10px rgba(45, 40, 32, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 225;
+    display: none;
+  }
+  .symptom-info-popover.open { display: block; }
+  .symptom-info-popover-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .symptom-info-popover-body {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.65;
+  }
 
 
   /* Onboarding overlay */
@@ -2655,6 +2870,46 @@
     border-left: 3px solid var(--accent3);
   }
 
+  @media (max-width: 640px) {
+    .card {
+      padding: 18px 16px;
+      margin-bottom: 10px;
+    }
+    .wearable-source-grid {
+      gap: 8px;
+    }
+    .wearable-btn,
+    .cycle-mode-btn {
+      padding: 13px 14px;
+    }
+    .shortcut-step {
+      gap: 10px;
+      padding: 14px 0;
+    }
+    .floating-panel-card.open {
+      width: calc(100vw - 14px);
+      max-height: calc(100vh - 14px);
+      border-radius: 20px;
+      padding: 18px 16px 22px;
+      padding-right: 52px;
+      top: auto;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .floating-panel-close {
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+    }
+    .panel-launch-hint {
+      margin-top: 8px;
+      padding: 10px 12px;
+      font-size: 11px;
+    }
+  }
+
 
   /* Baseline context on symptom sliders */
   .symptom-baseline {
@@ -3053,19 +3308,36 @@
     <div class="header-date" id="headerDate"></div>
   </div>
 
-  <div class="hero-panel">
-    <div class="hero-eyebrow">Built for low-energy days</div>
-    <div class="hero-title">Track energy and symptoms, spot patterns, and catch crash warning signs sooner.</div>
-    <div class="hero-copy">
-      Giorno is for people living with fatigue, brain fog, fluctuating symptoms, PEM, dysautonomia, and other complex conditions that are hard to explain day to day.
+  <div class="hero-shell">
+    <div class="hero-panel" id="heroPanel">
+      <div class="hero-panel-top">
+        <div>
+          <div class="hero-eyebrow">Built for low-energy days</div>
+          <div class="hero-title">Track energy and symptoms, spot patterns, and catch crash warning signs sooner.</div>
+        </div>
+        <button class="hero-dismiss" type="button" onclick="minimizeHeroCTA()" aria-label="Minimize welcome banner">−</button>
+      </div>
+      <div class="hero-copy">
+        Giorno is for people living with fatigue, brain fog, fluctuating symptoms, PEM, dysautonomia, and other complex conditions that are hard to explain day to day.
+      </div>
+      <div class="hero-support">
+        When your energy is limited, Giorno keeps things simple: log what matters, skip what doesn't, and come back later when you have more capacity.
+      </div>
+      <div class="hero-actions">
+        <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking with Giorno</button>
+      </div>
+      <a class="hero-link" href="#" onclick="scrollToHowItWorks(); return false;">See how it works</a>
     </div>
-    <div class="hero-support">
-      When your energy is limited, Giorno keeps things simple: log what matters, skip what doesn't, and come back later when you have more capacity.
+    <div class="hero-mini hidden" id="heroMini" role="region" aria-label="Collapsed welcome banner">
+      <div class="hero-mini-copy">
+        <div class="hero-mini-label">Giorno</div>
+        <div class="hero-mini-text">Start tracking energy, symptoms, and patterns when you're ready.</div>
+      </div>
+      <div class="hero-mini-actions">
+        <button class="hero-mini-btn primary" type="button" onclick="scrollToStartTracking()">Start tracking</button>
+        <button class="hero-mini-btn" type="button" onclick="expandHeroCTA()">Expand</button>
+      </div>
     </div>
-    <div class="hero-actions">
-      <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking with Giorno</button>
-    </div>
-    <a class="hero-link" href="#" onclick="scrollToHowItWorks(); return false;">See how it works</a>
   </div>
 
   <div class="how-strip" id="howItWorks">
@@ -3636,6 +3908,7 @@
           <div class="cycle-mode-desc">Skip cycle tracking — it won't appear in my insights</div>
         </button>
       </div>
+      <div class="panel-launch-hint">Tap a mode to open its settings in a focused panel. Giorno will keep your choice saved, and your daily cycle log stays below.</div>
 
 
       <!-- Natural cycle settings -->
@@ -3746,7 +4019,7 @@
 
 
       <div class="wearable-source-grid" id="wearableGrid">
-        <button class="wearable-btn active-source" onclick="selectWearable('manual', this)">
+        <button class="wearable-btn" onclick="selectWearable('manual', this)">
           <span class="wb-icon">✍️</span>
           <span class="wb-name">Manual entry</span>
           <span class="wb-desc">Enter HRV or HR directly</span>
@@ -3782,11 +4055,12 @@
           <span class="wb-desc">Generic date + HRV/HR file</span>
         </button>
       </div>
+      <div class="panel-launch-hint">Choose a source to open setup in a focused panel, so you can follow the steps without the whole page shifting around.</div>
     </div>
 
 
     <!-- Manual entry panel -->
-    <div class="card" id="wearable-panel-manual">
+    <div class="card" id="wearable-panel-manual" style="display:none;">
       <div class="card-title">Manual HRV / HR entry</div>
       <div class="card-subtitle">Enter today's reading from any source — a chest strap, finger sensor, or another app</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
@@ -5245,6 +5519,8 @@
 
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="floating-panel-backdrop" id="floatingPanelBackdrop" onclick="closeFloatingPanel()"></div>
+<div class="symptom-info-popover" id="symptomInfoPopover" role="dialog" aria-live="polite" aria-hidden="true"></div>
 
 
 <!-- Edit Log Modal -->
@@ -5512,6 +5788,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWeather();
   renderJournal();
   initNewFeatures();
+  initHeroCTA();
   injectSectionFooters();
   initPEM();
   initTriggers();
@@ -5660,6 +5937,10 @@ function loadTodayLog() {
 
 
 // ---- NAV ----
+let activeFloatingPanelId = null;
+let activeSymptomInfoButton = null;
+let heroCollapsed = false;
+
 function showSection(name, parentBtnId = null) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -5674,6 +5955,8 @@ function showSection(name, parentBtnId = null) {
     if (parentBtn) parentBtn.classList.add('active');
   }
   closeNavMenus();
+  closeFloatingPanel();
+  closeSymptomInfoPopover();
   const scrollTarget = parentBtnId
     ? document.getElementById(parentBtnId)?.closest('.nav-dropdown')
     : event?.target;
@@ -5703,6 +5986,31 @@ function scrollToHowItWorks() {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function updateHeroCTAUI() {
+  const heroPanel = document.getElementById('heroPanel');
+  const heroMini = document.getElementById('heroMini');
+  if (!heroPanel || !heroMini) return;
+  heroPanel.classList.toggle('hidden', heroCollapsed);
+  heroMini.classList.toggle('hidden', !heroCollapsed);
+}
+
+function minimizeHeroCTA() {
+  heroCollapsed = true;
+  localStorage.setItem('giorno_hero_collapsed', 'true');
+  updateHeroCTAUI();
+}
+
+function expandHeroCTA() {
+  heroCollapsed = false;
+  localStorage.setItem('giorno_hero_collapsed', 'false');
+  updateHeroCTAUI();
+}
+
+function initHeroCTA() {
+  heroCollapsed = localStorage.getItem('giorno_hero_collapsed') === 'true';
+  updateHeroCTAUI();
+}
+
 function toggleNavMenu(dropdownId, e) {
   e?.stopPropagation();
   const dropdown = document.getElementById(dropdownId);
@@ -5714,6 +6022,139 @@ function toggleNavMenu(dropdownId, e) {
 
 function closeNavMenus() {
   document.querySelectorAll('.nav-dropdown').forEach(dropdown => dropdown.classList.remove('open'));
+}
+
+function prepareFloatingPanel(panelId, options = {}) {
+  const panel = document.getElementById(panelId);
+  if (!panel || panel.dataset.floatingReady === 'true') return;
+  panel.classList.add('floating-panel-card');
+  if (!panel.querySelector('.floating-panel-close')) {
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'floating-panel-close';
+    closeBtn.setAttribute('aria-label', 'Close panel');
+    closeBtn.textContent = '×';
+    closeBtn.onclick = () => closeFloatingPanel();
+    panel.appendChild(closeBtn);
+  }
+  if (!panel.classList.contains('card') && options.title && !panel.querySelector('.floating-panel-header')) {
+    const header = document.createElement('div');
+    header.className = 'floating-panel-header';
+    header.innerHTML = `
+      <div class="floating-panel-title">${options.title}</div>
+      <div class="floating-panel-subtitle">${options.subtitle || 'These settings stay saved for future logs.'}</div>
+    `;
+    panel.prepend(header);
+  }
+  panel.dataset.floatingReady = 'true';
+}
+
+function initFloatingPanels() {
+  [
+    'wearable-panel-manual',
+    'wearable-panel-csv',
+    'wearable-panel-bluetooth',
+    'wearable-panel-apple',
+    'wearable-panel-garmin',
+    'wearable-panel-fitbit',
+    'wearable-panel-polar'
+  ].forEach(id => prepareFloatingPanel(id));
+  prepareFloatingPanel('cycleSettingsNatural', { title: 'Natural cycle settings' });
+  prepareFloatingPanel('cycleSettingsHormonal', { title: 'Hormonal birth control settings' });
+  prepareFloatingPanel('cycleSettingsSuppressed', { title: 'Suppressed / absent periods settings' });
+  prepareFloatingPanel('cycleSettingsPerimenopause', { title: 'Perimenopause / menopause settings' });
+}
+
+function openFloatingPanel(panelId) {
+  const panel = document.getElementById(panelId);
+  const backdrop = document.getElementById('floatingPanelBackdrop');
+  if (!panel || !backdrop) return;
+  if (activeFloatingPanelId && activeFloatingPanelId !== panelId) {
+    closeFloatingPanel();
+  }
+  prepareFloatingPanel(panelId);
+  panel.style.display = 'block';
+  panel.classList.add('open');
+  backdrop.classList.add('open');
+  document.body.classList.add('floating-panel-open');
+  activeFloatingPanelId = panelId;
+}
+
+function closeFloatingPanel() {
+  const backdrop = document.getElementById('floatingPanelBackdrop');
+  if (backdrop) backdrop.classList.remove('open');
+  document.body.classList.remove('floating-panel-open');
+  if (!activeFloatingPanelId) return;
+  const panel = document.getElementById(activeFloatingPanelId);
+  if (panel) {
+    panel.classList.remove('open');
+    panel.style.display = 'none';
+  }
+  activeFloatingPanelId = null;
+}
+
+function positionSymptomInfoPopover(btn, popover) {
+  const rect = btn.getBoundingClientRect();
+  const margin = 12;
+  const popoverRect = popover.getBoundingClientRect();
+  let left = rect.right - popoverRect.width;
+  left = Math.max(margin, Math.min(left, window.innerWidth - popoverRect.width - margin));
+  let top = rect.bottom + 10;
+  if (top + popoverRect.height > window.innerHeight - margin) {
+    top = rect.top - popoverRect.height - 10;
+  }
+  top = Math.max(margin, top);
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+}
+
+function showSymptomInfo(id, e) {
+  const popover = document.getElementById('symptomInfoPopover');
+  const btn = e?.currentTarget || e?.target?.closest('.symptom-info-btn');
+  const symptom = DEFAULT_SYMPTOMS.find(s => s.id === id);
+  if (!popover || !btn || !symptom?.desc) return;
+  const isSame = activeSymptomInfoButton === btn && popover.classList.contains('open');
+  closeSymptomInfoPopover();
+  if (isSame) return;
+  popover.innerHTML = `
+    <div class="symptom-info-popover-title">${symptom.name}</div>
+    <div class="symptom-info-popover-body">${symptom.desc}</div>
+  `;
+  popover.classList.add('open');
+  popover.setAttribute('aria-hidden', 'false');
+  activeSymptomInfoButton = btn;
+  btn.classList.add('active');
+  positionSymptomInfoPopover(btn, popover);
+}
+
+function closeSymptomInfoPopover() {
+  const popover = document.getElementById('symptomInfoPopover');
+  if (popover) {
+    popover.classList.remove('open');
+    popover.setAttribute('aria-hidden', 'true');
+  }
+  if (activeSymptomInfoButton) activeSymptomInfoButton.classList.remove('active');
+  activeSymptomInfoButton = null;
+}
+
+function handleGlobalDocumentClick(e) {
+  if (!e.target.closest('.nav-dropdown')) closeNavMenus();
+  if (!e.target.closest('.symptom-info-popover') && !e.target.closest('.symptom-info-btn')) {
+    closeSymptomInfoPopover();
+  }
+}
+
+function handleGlobalKeydown(e) {
+  if (e.key !== 'Escape') return;
+  closeNavMenus();
+  closeSymptomInfoPopover();
+  closeFloatingPanel();
+  const privacyModal = document.getElementById('privacyModal');
+  const editModal = document.getElementById('editModal');
+  const editLogModal = document.getElementById('editLogModal');
+  if (privacyModal?.classList.contains('open')) privacyModal.classList.remove('open');
+  if (editModal?.classList.contains('open')) closeModal();
+  if (editLogModal?.classList.contains('open')) closeEditLogModal();
 }
 
 function updateNavScrollHint() {
@@ -5733,7 +6174,8 @@ function initNavScrollHint() {
   if (!nav) return;
   nav.addEventListener('scroll', updateNavScrollHint, { passive: true });
   window.addEventListener('resize', updateNavScrollHint);
-  document.addEventListener('click', () => closeNavMenus());
+  document.addEventListener('click', handleGlobalDocumentClick);
+  document.addEventListener('keydown', handleGlobalKeydown);
   requestAnimationFrame(updateNavScrollHint);
 }
 
@@ -5829,16 +6271,6 @@ function updateSliderLabel(id, v) {
 }
 
 
-function showSymptomInfo(id) {
-  const box = document.getElementById('info_' + id);
-  const btn = box?.previousElementSibling?.querySelector('.symptom-info-btn');
-  if (!box) return;
-  const isVisible = box.style.display !== 'none';
-  box.style.display = isVisible ? 'none' : 'block';
-  if (btn) btn.classList.toggle('active', !isVisible);
-}
-
-
 function renderSymptomSliders() {
   const container = document.getElementById('symptomSliders');
   const active = symptoms.filter(s => s.active);
@@ -5890,11 +6322,10 @@ function renderSymptomSliders() {
       <div class="symptom-header">
         <span class="symptom-name">${s.name}</span>
         <div style="display:flex;align-items:center;gap:8px;">
-          ${desc ? `<button class="symptom-info-btn" onclick="showSymptomInfo('${s.id}')" title="What is this?">?</button>` : ''}
+          ${desc ? `<button class="symptom-info-btn" onclick="showSymptomInfo('${s.id}', event)" title="What is this?">?</button>` : ''}
           <span class="symptom-value" id="label_${s.id}">${sliderLabel(0)}</span>
         </div>
       </div>
-      ${desc ? `<div class="symptom-info-box" id="info_${s.id}" style="display:none;">${desc}</div>` : ''}
       <input type="range" class="symptom-slider" min="0" max="4" value="0" id="slider_${s.id}"
         aria-label="${s.name} severity, 0 none to 4 worst"
         aria-valuemin="0" aria-valuemax="4"
@@ -7262,9 +7693,13 @@ function selectWearable(type, btn) {
   const panels = ['manual','csv','apple','garmin','fitbit','polar','bluetooth'];
   panels.forEach(p => {
     const el = document.getElementById('wearable-panel-' + p);
-    if (el) el.style.display = p === type ? 'block' : 'none';
+    if (el) {
+      el.classList.remove('open');
+      el.style.display = 'none';
+    }
   });
   activeWearablePanel = type;
+  openFloatingPanel('wearable-panel-' + type);
   if (type === 'bluetooth') checkBluetoothSupport();
   if (type === 'apple') renderShortcutHistory();
 }
@@ -9206,6 +9641,7 @@ function renderCycleInsights() {
 
 
 function initCycleTracker() {
+  initFloatingPanels();
   renderCycleHistory();
   renderCycleInsights();
   // Restore saved mode
@@ -9245,10 +9681,14 @@ function setCycleMode(mode, btn, silent) {
 
 
   if (mode === 'nottracking') {
+    closeFloatingPanel();
     if (dailyCard) dailyCard.style.display = 'none';
   } else if (mode === 'natural') {
     const el = document.getElementById('cycleSettingsNatural');
-    if (el) el.style.display = 'block';
+    if (el) {
+      el.style.display = silent ? 'none' : 'block';
+      if (!silent) openFloatingPanel('cycleSettingsNatural');
+    }
     if (dailyCard) dailyCard.style.display = 'block';
     if (dailyTitle) dailyTitle.textContent = 'Log today\'s cycle';
     if (dailyContent) dailyContent.innerHTML = `
@@ -9266,7 +9706,10 @@ function setCycleMode(mode, btn, silent) {
     `;
   } else if (mode === 'hormonal') {
     const el = document.getElementById('cycleSettingsHormonal');
-    if (el) el.style.display = 'block';
+    if (el) {
+      el.style.display = silent ? 'none' : 'block';
+      if (!silent) openFloatingPanel('cycleSettingsHormonal');
+    }
     if (dailyCard) dailyCard.style.display = 'block';
     if (dailyTitle) dailyTitle.textContent = 'Log today';
     if (dailyContent) dailyContent.innerHTML = `
@@ -9282,7 +9725,10 @@ function setCycleMode(mode, btn, silent) {
     `;
   } else if (mode === 'suppressed') {
     const el = document.getElementById('cycleSettingsSuppressed');
-    if (el) el.style.display = 'block';
+    if (el) {
+      el.style.display = silent ? 'none' : 'block';
+      if (!silent) openFloatingPanel('cycleSettingsSuppressed');
+    }
     if (dailyCard) dailyCard.style.display = 'block';
     if (dailyTitle) dailyTitle.textContent = 'Log today';
     if (dailyContent) dailyContent.innerHTML = `
@@ -9299,7 +9745,10 @@ function setCycleMode(mode, btn, silent) {
     `;
   } else if (mode === 'perimenopause') {
     const el = document.getElementById('cycleSettingsPerimenopause');
-    if (el) el.style.display = 'block';
+    if (el) {
+      el.style.display = silent ? 'none' : 'block';
+      if (!silent) openFloatingPanel('cycleSettingsPerimenopause');
+    }
     if (dailyCard) dailyCard.style.display = 'block';
     if (dailyTitle) dailyTitle.textContent = 'Log today';
     if (dailyContent) dailyContent.innerHTML = `
