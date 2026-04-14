@@ -702,11 +702,22 @@
   .symptom-item {
     margin-bottom: 20px;
   }
+  .symptom-item.prefill-pending {
+    background: color-mix(in srgb, var(--bg2) 72%, white 28%);
+    border: 1px dashed color-mix(in srgb, var(--border) 76%, var(--accent3) 24%);
+    border-radius: 16px;
+    padding: 12px;
+  }
   .symptom-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+  }
+  .symptom-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .symptom-name {
     font-size: 14px;
@@ -747,6 +758,45 @@
   .symptom-labels span {
     font-size: 10px;
     color: var(--text3);
+  }
+  .prefill-badge {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    background: rgba(106, 143, 122, 0.12);
+    border: 1px solid rgba(106, 143, 122, 0.2);
+    border-radius: 999px;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+  .carryover-notice {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(255, 245, 218, 0.92), rgba(244, 248, 239, 0.96));
+    border: 1px solid rgba(184, 132, 90, 0.18);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .carryover-notice.visible { display: flex; }
+  .carryover-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .carryover-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .carryover-text {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text2);
   }
 
 
@@ -3474,6 +3524,14 @@
       <div id="yesterdayRefContent"></div>
     </div>
 
+    <div class="carryover-notice" id="yesterdayCarryoverNotice" aria-live="polite">
+      <div class="carryover-icon">↺</div>
+      <div>
+        <div class="carryover-title">Some sliders are still showing yesterday as a starting point</div>
+        <div class="carryover-text" id="yesterdayCarryoverText">Review anything marked “Yesterday” so you know today’s log is really yours.</div>
+      </div>
+    </div>
+
 
     <div class="card">
       <div class="card-title">How are you right now?</div>
@@ -6137,6 +6195,47 @@ function closeSymptomInfoPopover() {
   activeSymptomInfoButton = null;
 }
 
+function markSliderAsPendingFromYesterday(id) {
+  const slider = document.getElementById('slider_' + id);
+  const item = slider?.closest('.symptom-item');
+  const badge = document.getElementById('prefillBadge_' + id);
+  if (slider) {
+    slider.dataset.prefilled = 'true';
+    slider.style.opacity = '0.72';
+    slider.title = 'Showing yesterday as a starting point — move to confirm today';
+  }
+  if (item) item.classList.add('prefill-pending');
+  if (badge) badge.style.display = 'inline-flex';
+}
+
+function clearSliderPendingState(id) {
+  const slider = document.getElementById('slider_' + id);
+  const item = slider?.closest('.symptom-item');
+  const badge = document.getElementById('prefillBadge_' + id);
+  if (slider) {
+    delete slider.dataset.prefilled;
+    slider.style.opacity = '1';
+    slider.title = '';
+  }
+  if (item) item.classList.remove('prefill-pending');
+  if (badge) badge.style.display = 'none';
+}
+
+function updateYesterdayCarryoverNotice() {
+  const notice = document.getElementById('yesterdayCarryoverNotice');
+  const text = document.getElementById('yesterdayCarryoverText');
+  if (!notice || !text) return;
+  const pendingCount = document.querySelectorAll('.symptom-slider[data-prefilled="true"]').length;
+  if (pendingCount === 0) {
+    notice.classList.remove('visible');
+    return;
+  }
+  notice.classList.add('visible');
+  text.textContent = pendingCount === 1
+    ? '1 symptom slider is still showing yesterday as a starting point. Move it once to confirm today.'
+    : `${pendingCount} symptom sliders are still showing yesterday as a starting point. Move each one once to confirm today.`;
+}
+
 function handleGlobalDocumentClick(e) {
   if (!e.target.closest('.nav-dropdown')) closeNavMenus();
   if (!e.target.closest('.symptom-info-popover') && !e.target.closest('.symptom-info-btn')) {
@@ -6321,7 +6420,8 @@ function renderSymptomSliders() {
     return `<div class="symptom-item">
       <div class="symptom-header">
         <span class="symptom-name">${s.name}</span>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="symptom-meta">
+          <span class="prefill-badge" id="prefillBadge_${s.id}" style="display:none;">Yesterday</span>
           ${desc ? `<button class="symptom-info-btn" onclick="showSymptomInfo('${s.id}', event)" title="What is this?">?</button>` : ''}
           <span class="symptom-value" id="label_${s.id}">${sliderLabel(0)}</span>
         </div>
@@ -6381,9 +6481,8 @@ function activateDefaultSymptoms() {
 function onSlider(id, v, baseline) {
   updateSliderLabel(id, v);
   todayLog.symptoms[id] = parseInt(v);
-  // Remove pre-fill opacity
-  const slider = document.getElementById('slider_' + id);
-  if (slider) { slider.style.opacity = '1'; slider.title = ''; }
+  clearSliderPendingState(id);
+  updateYesterdayCarryoverNotice();
   // Update baseline context
   const baselineEl = document.getElementById('baseline_' + id);
   if (!baselineEl || baseline === null) return;
@@ -10483,15 +10582,14 @@ function showYesterdayRef() {
     if (yVal !== undefined) {
       const slider = document.getElementById('slider_' + s.id);
       const label = document.getElementById('label_' + s.id);
-      if (slider && !todayLog.symptoms?.[s.id]) {
+      if (slider && todayLog.symptoms?.[s.id] === undefined) {
         slider.value = yVal;
         if (label) label.textContent = sliderLabel(yVal);
-        // Don't save to todayLog automatically — user must move slider to confirm
-        slider.style.opacity = '0.6';
-        slider.title = 'Pre-filled from yesterday — move to confirm';
+        markSliderAsPendingFromYesterday(s.id);
       }
     }
   });
+  updateYesterdayCarryoverNotice();
 }
 
 
