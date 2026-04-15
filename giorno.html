@@ -264,10 +264,22 @@
     background: #2d2820;
     color: #faf7f2;
   }
-  .how-strip {
+  .how-shell {
     margin: 0 20px 14px;
+  }
+  .how-strip {
+    margin: 0;
     display: grid;
     gap: 10px;
+  }
+  .how-mini {
+    margin: 0;
+  }
+  .how-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
   }
   .how-title {
     font-family: 'Lora', serif;
@@ -320,6 +332,62 @@
     font-size: 12px;
     line-height: 1.55;
     color: var(--text2);
+  }
+  .how-dismiss {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 76%, white 24%);
+    color: var(--text2);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .how-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+  .how-mini.hidden {
+    display: none;
+  }
+  .how-mini-copy {
+    min-width: 0;
+  }
+  .how-mini-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .how-mini-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text2);
+  }
+  .how-mini-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 13px;
+    background: rgba(45, 40, 32, 0.08);
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .how-mini-btn.primary {
+    background: var(--text);
+    color: var(--bg);
   }
 
 
@@ -510,6 +578,7 @@
     }
     .hero-shell,
     .hero-panel,
+    .how-shell,
     .how-strip {
       margin-left: 16px;
       margin-right: 16px;
@@ -550,6 +619,11 @@
     .hero-mini-btn {
       min-height: 40px;
       padding: 10px 14px;
+    }
+    .how-mini {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
     }
   }
 
@@ -3390,33 +3464,45 @@
     </div>
   </div>
 
-  <div class="how-strip" id="howItWorks">
-    <div>
-      <div class="how-title">How Giorno works</div>
-      <div class="how-subtitle">A simple rhythm you can keep up with, even when you don't feel good.</div>
+  <div class="how-shell" id="howItWorks">
+    <div class="how-strip" id="howPanel">
+      <div class="how-top">
+        <div>
+          <div class="how-title">How Giorno works</div>
+          <div class="how-subtitle">A simple rhythm you can keep up with, even when you don't feel good.</div>
+        </div>
+        <button class="how-dismiss" type="button" onclick="minimizeHowItWorks()" aria-label="Minimize how Giorno works">−</button>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-step">1</div>
+          <div>
+            <div class="how-card-title">Track energy and symptoms</div>
+            <div class="how-card-copy">Log how you actually feel in under a minute, with space to keep it minimal on harder days.</div>
+          </div>
+        </div>
+        <div class="how-card">
+          <div class="how-step">2</div>
+          <div>
+            <div class="how-card-title">See patterns over time</div>
+            <div class="how-card-copy">Giorno helps you notice trends in sleep, symptoms, medications, and better or worse days.</div>
+          </div>
+        </div>
+        <div class="how-card">
+          <div class="how-step">3</div>
+          <div>
+            <div class="how-card-title">Plan around crashes</div>
+            <div class="how-card-copy">Use those patterns to pace earlier, understand what helps, and respond before a crash fully lands.</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="how-grid">
-      <div class="how-card">
-        <div class="how-step">1</div>
-        <div>
-          <div class="how-card-title">Track energy and symptoms</div>
-          <div class="how-card-copy">Log how you actually feel in under a minute, with space to keep it minimal on harder days.</div>
-        </div>
+    <div class="how-mini hidden" id="howMini" role="region" aria-label="Collapsed how Giorno works">
+      <div class="how-mini-copy">
+        <div class="how-mini-label">How Giorno works</div>
+        <div class="how-mini-text">Track, notice patterns, and plan around harder days.</div>
       </div>
-      <div class="how-card">
-        <div class="how-step">2</div>
-        <div>
-          <div class="how-card-title">See patterns over time</div>
-          <div class="how-card-copy">Giorno helps you notice trends in sleep, symptoms, medications, and better or worse days.</div>
-        </div>
-      </div>
-      <div class="how-card">
-        <div class="how-step">3</div>
-        <div>
-          <div class="how-card-title">Plan around crashes</div>
-          <div class="how-card-copy">Use those patterns to pace earlier, understand what helps, and respond before a crash fully lands.</div>
-        </div>
-      </div>
+      <button class="how-mini-btn primary" type="button" onclick="expandHowItWorks()">Expand</button>
     </div>
   </div>
 
@@ -3666,6 +3752,9 @@
         </button>
         <button class="quick-btn" data-bristol-val="5" onclick="selectBristol(5, this)" style="padding:10px 4px">
           <span class="qb-icon">💦</span><span class="qb-label" style="font-size:11px">Type 7<br><span style="color:var(--text3);font-size:10px">Watery</span></span>
+        </button>
+        <button class="quick-btn" data-bristol-val="none" onclick="selectBristol('none', this)" style="padding:10px 12px;grid-column:span 4">
+          <span class="qb-icon">🚫</span><span class="qb-label" style="font-size:11px">No bowel movement today</span>
         </button>
       </div>
       <div id="bristolSavedNote" style="display:none;font-size:12px;color:var(--accent3);margin-top:8px;">✓ Saved today</div>
@@ -4295,7 +4384,7 @@
 
 
       <div class="shortcut-explainer">
-        Your Apple Watch syncs into <strong>Apple Health on your iPhone</strong>. Giorno can't read Apple Health directly from the web, so the bridge is a Shortcut: it reads the latest Apple Health values on your iPhone, then sends them to your Giorno account. Set it up once, and an automation can run it every morning.
+        Your Apple Watch syncs into <strong>Apple Health on your iPhone</strong>. Giorno can't read Apple Health directly from the web, so the bridge is a Shortcut: it reads the latest Apple Health values on your iPhone, then sends them to your Giorno account. <strong>You'll need to sign in to Giorno first</strong> if you want those readings to show up across your phone and computer. Set it up once, and an automation can run it every morning.
       </div>
 
 
@@ -4769,12 +4858,12 @@
   <div class="section" id="section-sync">
     <div class="card">
       <div class="card-title">Cloud sync</div>
-      <div class="card-subtitle">Access your data on any device, backed up securely</div>
+      <div class="card-subtitle">Sign in to sync your Giorno data between your phone, tablet, and computer</div>
 
 
       <div id="syncSignedOut">
         <div class="wearable-note" style="margin-bottom:20px;">
-          Create a free account to sync your data across devices. Your logs are encrypted and stored securely — you can export or delete everything at any time.<br><br>
+          Create a free account to sync your data across devices. You need to be signed in if you want what you log on your phone to appear on your computer too. Your logs are encrypted and stored securely — you can export or delete everything at any time.<br><br>
           <strong>Your data is never sold or used for advertising.</strong>
         </div>
 
@@ -5847,6 +5936,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderJournal();
   initNewFeatures();
   initHeroCTA();
+  initHowItWorks();
   injectSectionFooters();
   initPEM();
   initTriggers();
@@ -5966,7 +6056,7 @@ function loadTodayLog() {
   updateDayContextSummary();
   updateLowEnergyModeUI();
   // Restore Bristol selection
-  if (todayLog.bristol) {
+  if (todayLog.bristol !== undefined && todayLog.bristol !== null && todayLog.bristol !== '') {
     const bristolBtn = document.querySelector(`#bristolGrid [data-bristol-val="${todayLog.bristol}"]`);
     if (bristolBtn) {
       bristolBtn.classList.add('selected');
@@ -5998,6 +6088,7 @@ function loadTodayLog() {
 let activeFloatingPanelId = null;
 let activeSymptomInfoButton = null;
 let heroCollapsed = false;
+let howCollapsed = false;
 
 function showSection(name, parentBtnId = null) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -6067,6 +6158,31 @@ function expandHeroCTA() {
 function initHeroCTA() {
   heroCollapsed = localStorage.getItem('giorno_hero_collapsed') === 'true';
   updateHeroCTAUI();
+}
+
+function updateHowItWorksUI() {
+  const howPanel = document.getElementById('howPanel');
+  const howMini = document.getElementById('howMini');
+  if (!howPanel || !howMini) return;
+  howPanel.classList.toggle('hidden', howCollapsed);
+  howMini.classList.toggle('hidden', !howCollapsed);
+}
+
+function minimizeHowItWorks() {
+  howCollapsed = true;
+  localStorage.setItem('giorno_how_collapsed', 'true');
+  updateHowItWorksUI();
+}
+
+function expandHowItWorks() {
+  howCollapsed = false;
+  localStorage.setItem('giorno_how_collapsed', 'false');
+  updateHowItWorksUI();
+}
+
+function initHowItWorks() {
+  howCollapsed = localStorage.getItem('giorno_how_collapsed') === 'true';
+  updateHowItWorksUI();
 }
 
 function toggleNavMenu(dropdownId, e) {
