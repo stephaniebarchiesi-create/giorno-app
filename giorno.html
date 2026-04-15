@@ -10171,65 +10171,12 @@ function dismissPWA() {
 }
 
 
-// Register service worker for offline support
+// Disable service workers for now so sign-in and live updates stay reliable.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Inline service worker as blob URL since we're a single HTML file
-    const swCode = `
-      const CACHE = 'giorno-v1.7';
-      const ASSETS = ['/'];
-      self.addEventListener('install', e => e.waitUntil(
-        caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
-      ));
-      self.addEventListener('activate', e => e.waitUntil((async () => {
-        const keys = await caches.keys();
-        await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
-        await self.clients.claim();
-      })()));
-      self.addEventListener('fetch', e => e.respondWith(
-        (async () => {
-          const url = new URL(e.request.url);
-          const sameOrigin = url.origin === self.location.origin;
-
-          // Never intercept auth or API traffic.
-          if (!sameOrigin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
-            return fetch(e.request);
-          }
-
-          // Keep navigations network-first so login redirects and fresh deploys work reliably.
-          if (e.request.mode === 'navigate') {
-            try {
-              const response = await fetch(e.request);
-              const cache = await caches.open(CACHE);
-              cache.put('/', response.clone());
-              return response;
-            } catch {
-              return (await caches.match('/')) || Response.error();
-            }
-          }
-
-          const cached = await caches.match(e.request);
-          if (cached) return cached;
-
-          const response = await fetch(e.request);
-          if (e.request.method === 'GET') {
-            const cache = await caches.open(CACHE);
-            cache.put(e.request, response.clone());
-          }
-          return response;
-        })()
-      ));
-      self.addEventListener('push', e => {
-        const data = e.data?.json() || {};
-        e.waitUntil(self.registration.showNotification(data.title || 'Giorno', {
-          body: data.body || '',
-          icon: data.icon || '',
-          tag: data.tag || 'giorno'
-        }));
-      });
-    `;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    navigator.serviceWorker.getRegistrations()
+      .then(registrations => Promise.all(registrations.map(reg => reg.unregister())))
+      .catch(() => {});
   });
 }
 
