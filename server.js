@@ -356,7 +356,14 @@ app.get('/api/login', async (req, res) => {
       prompt: 'select_account'
     });
 
-    return res.redirect(authUrl.href);
+    return req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('Could not persist auth session before redirect:', saveErr);
+        return res.redirect('/?auth_error=signin_failed');
+      }
+
+      return res.redirect(authUrl.href);
+    });
   } catch (err) {
     console.error('Login route error:', err);
     return res.redirect('/?auth_error=signin_failed');
@@ -422,7 +429,14 @@ app.get('/auth/google/callback', async (req, res) => {
         return res.redirect('/?auth_error=session_failed');
       }
 
-      return res.redirect(`${sanitizeReturnTo(authFlow.returnTo)}?auth=google_connected`);
+      return req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Could not persist signed-in session after Google callback:', saveErr);
+          return res.redirect('/?auth_error=session_failed');
+        }
+
+        return res.redirect(`${sanitizeReturnTo(authFlow.returnTo)}?auth=google_connected`);
+      });
     });
   } catch (err) {
     delete req.session.authFlow;
