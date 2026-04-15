@@ -6170,6 +6170,10 @@ function updateHowItWorksUI() {
   if (!howPanel || !howMini) return;
   howPanel.classList.toggle('hidden', howCollapsed);
   howMini.classList.toggle('hidden', !howCollapsed);
+  howPanel.style.display = howCollapsed ? 'none' : 'grid';
+  howMini.style.display = howCollapsed ? 'flex' : 'none';
+  howPanel.setAttribute('aria-hidden', howCollapsed ? 'true' : 'false');
+  howMini.setAttribute('aria-hidden', howCollapsed ? 'false' : 'true');
 }
 
 function minimizeHowItWorks() {
