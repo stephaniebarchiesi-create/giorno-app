@@ -78,6 +78,104 @@ function buildUserPayload(row, extras = {}) {
   };
 }
 
+function renderAuthBridge({ title, body, redirectTo, actionLabel = 'Continue', tone = 'default' }) {
+  const safeTitle = String(title || 'Connecting...');
+  const safeBody = String(body || '');
+  const safeRedirect = String(redirectTo || '/');
+  const toneStyles =
+    tone === 'error'
+      ? 'background: linear-gradient(180deg, #fff8f2 0%, #fff 100%); border-color: rgba(184, 90, 90, 0.18);'
+      : 'background: linear-gradient(180deg, #f7f6f1 0%, #fffdfa 100%); border-color: rgba(87, 112, 86, 0.14);';
+
+  return `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>${safeTitle}</title>
+      <style>
+        :root { color-scheme: light; }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          font-family: "DM Sans", system-ui, sans-serif;
+          background: #f6f2eb;
+          color: #2d2820;
+        }
+        .auth-bridge {
+          width: min(460px, 100%);
+          border: 1px solid rgba(45, 40, 32, 0.08);
+          border-radius: 24px;
+          padding: 28px 24px;
+          box-shadow: 0 20px 60px rgba(45, 40, 32, 0.08);
+          ${toneStyles}
+        }
+        .auth-mark {
+          font-size: 12px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #786a59;
+          margin-bottom: 10px;
+          font-weight: 600;
+        }
+        h1 {
+          font-family: "Lora", Georgia, serif;
+          font-size: 28px;
+          line-height: 1.1;
+          margin: 0 0 10px;
+        }
+        p {
+          margin: 0;
+          color: #584b3f;
+          line-height: 1.7;
+          font-size: 15px;
+        }
+        .auth-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 18px;
+          flex-wrap: wrap;
+        }
+        a, button {
+          border: none;
+          border-radius: 999px;
+          padding: 12px 16px;
+          text-decoration: none;
+          cursor: pointer;
+          font: inherit;
+        }
+        .primary {
+          background: #2d2820;
+          color: #faf7f2;
+        }
+        .secondary {
+          background: rgba(45, 40, 32, 0.08);
+          color: #2d2820;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="auth-bridge">
+        <div class="auth-mark">Giorno</div>
+        <h1>${safeTitle}</h1>
+        <p>${safeBody}</p>
+        <div class="auth-actions">
+          <a class="primary" href="${safeRedirect}">${actionLabel}</a>
+          <a class="secondary" href="/">Back to Giorno</a>
+        </div>
+      </div>
+      <script>
+        setTimeout(() => {
+          window.location.replace(${JSON.stringify(safeRedirect)});
+        }, 900);
+      </script>
+    </body>
+  </html>`;
+}
+
 function toNumberOrNull(value, decimals = null) {
   if (value === null || value === undefined || value === '') return null;
 
@@ -374,7 +472,17 @@ app.get('/auth/google/callback', async (req, res) => {
   const authFlow = req.session.authFlow;
 
   if (!authFlow || authFlow.provider !== 'google') {
-    return res.redirect('/?auth_error=missing_auth_session');
+    return res
+      .status(400)
+      .send(
+        renderAuthBridge({
+          title: 'That sign-in session expired',
+          body: 'Please head back to Giorno and start Google sign-in again. This usually happens if the browser lost the temporary login session.',
+          redirectTo: '/?auth_error=missing_auth_session',
+          actionLabel: 'Try sign-in again',
+          tone: 'error'
+        })
+      );
   }
 
   try {
@@ -426,22 +534,59 @@ app.get('/auth/google/callback', async (req, res) => {
     req.logIn(user, (err) => {
       if (err) {
         console.error('Google login session error:', err);
-        return res.redirect('/?auth_error=session_failed');
+        return res
+          .status(500)
+          .send(
+            renderAuthBridge({
+              title: 'Google connected, but Giorno could not finish signing you in',
+              body: 'The app reached Google successfully, but the local session could not be opened. Please go back and try once more.',
+              redirectTo: '/?auth_error=session_failed',
+              actionLabel: 'Back to Giorno',
+              tone: 'error'
+            })
+          );
       }
 
       return req.session.save((saveErr) => {
         if (saveErr) {
           console.error('Could not persist signed-in session after Google callback:', saveErr);
-          return res.redirect('/?auth_error=session_failed');
+          return res
+            .status(500)
+            .send(
+              renderAuthBridge({
+                title: 'Giorno could not save your sign-in',
+                body: 'Google returned successfully, but the app could not save the new signed-in session. Please try again in a moment.',
+                redirectTo: '/?auth_error=session_failed',
+                actionLabel: 'Back to Giorno',
+                tone: 'error'
+              })
+            );
         }
 
-        return res.redirect(`${sanitizeReturnTo(authFlow.returnTo)}?auth=google_connected`);
+        return res.send(
+          renderAuthBridge({
+            title: 'Google sign-in connected',
+            body: 'You’re signed in now. Giorno is reopening with sync enabled.',
+            redirectTo: `${sanitizeReturnTo(authFlow.returnTo)}?auth=google_connected`,
+            actionLabel: 'Open Giorno'
+          })
+        );
       });
     });
   } catch (err) {
     delete req.session.authFlow;
     console.error('Google callback error:', err);
-    return res.redirect('/?auth_error=google_callback_failed');
+    return res
+      .status(500)
+      .send(
+        renderAuthBridge({
+          title: 'Google sign-in did not finish correctly',
+          body: `Giorno received the callback, but something in the final step failed. ${err?.message ? `Details: ${String(err.message)}` : ''}`.trim(),
+          redirectTo: '/?auth_error=google_callback_failed',
+          actionLabel: 'Back to Giorno',
+          tone: 'error'
+        })
+      );
   }
 });
 
