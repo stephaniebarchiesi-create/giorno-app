@@ -4868,8 +4868,9 @@
         </div>
 
 
-        <button class="save-btn" style="width:100%;text-align:center;" onclick="window.location.href='/api/login'">Sign in / Create account →</button>
-        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Supports Google, Apple, GitHub, and email</div>
+        <button class="save-btn" style="width:100%;text-align:center;" onclick="startGoogleSignIn()">Continue with Google →</button>
+        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Google sign-in is available now. Apple, GitHub, and email sign-in are coming soon.</div>
+        <div id="syncAuthStatus" style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;min-height:18px;"></div>
       </div>
 
 
@@ -4898,7 +4899,7 @@
 
 
         <button class="add-btn" style="width:100%;margin-bottom:8px;" onclick="manualSync()">↻ Sync now</button>
-        <button class="med-bulk-btn none-taken" style="width:100%;margin-top:4px;" onclick="window.location.href='/api/logout'">Sign out</button>
+        <button class="med-bulk-btn none-taken" style="width:100%;margin-top:4px;" onclick="syncSignOut()">Sign out</button>
       </div>
     </div>
 
@@ -8322,6 +8323,10 @@ let syncUser = loadData('giorno_sync_user', null);
 
 function initSync() {
   if (currentUser) {
+    if (syncUser) {
+      syncUser = null;
+      localStorage.removeItem('giorno_sync_user');
+    }
     document.getElementById('syncSignedOut').style.display = 'none';
     document.getElementById('syncSignedIn').style.display = 'block';
     const emailEl = document.getElementById('syncUserEmail');
@@ -8333,69 +8338,44 @@ function initSync() {
     setSyncDot('synced');
     const statusEl = document.getElementById('syncStatusText');
     if (statusEl) statusEl.textContent = 'Synced to your account';
-  } else if (syncUser) {
-    showSyncSignedIn();
+  } else {
+    if (syncUser) {
+      syncUser = null;
+      localStorage.removeItem('giorno_sync_user');
+    }
+    showAuthFeedbackFromUrl();
   }
   setDefaultExportDates();
   renderWearableHistory();
 }
 
 
-function switchAuthTab(tab) {
-  document.getElementById('authFormSignin').style.display = tab === 'signin' ? 'block' : 'none';
-  document.getElementById('authFormSignup').style.display = tab === 'signup' ? 'block' : 'none';
-  document.getElementById('tabSignIn').classList.toggle('selected', tab === 'signin');
-  document.getElementById('tabSignUp').classList.toggle('selected', tab === 'signup');
+function startGoogleSignIn() {
+  window.location.href = '/api/login?returnTo=/';
 }
 
 
 function syncSignIn() {
-  const email = document.getElementById('syncEmail').value.trim();
-  const pass = document.getElementById('syncPassword').value;
-  if (!email || !pass) { setSyncStatus('Please enter your email and password'); return; }
-  setSyncStatus('⏳ Signing in…');
-  // Placeholder — replace with: supabase.auth.signInWithPassword({ email, password: pass })
-  setTimeout(() => {
-    syncUser = { email, id: 'local_' + Date.now() };
-    saveData('giorno_sync_user', syncUser);
-    showSyncSignedIn();
-    showToast('Signed in');
-  }, 1000);
+  startGoogleSignIn();
 }
 
 
 function syncSignUp() {
-  const email = document.getElementById('syncEmailNew').value.trim();
-  const pass = document.getElementById('syncPasswordNew').value;
-  if (!email || !pass) { setSyncStatus('Please fill in both fields'); return; }
-  if (pass.length < 8) { setSyncStatus('Password must be at least 8 characters'); return; }
-  setSyncStatus('⏳ Creating account…');
-  // Placeholder — replace with: supabase.auth.signUp({ email, password: pass })
-  setTimeout(() => {
-    syncUser = { email, id: 'local_' + Date.now() };
-    saveData('giorno_sync_user', syncUser);
-    showSyncSignedIn();
-    showToast('Account created — check your email to verify');
-  }, 1000);
+  startGoogleSignIn();
 }
 
 
 function syncMagicLink() {
-  const email = document.getElementById('syncEmail').value.trim();
-  if (!email) { setSyncStatus('Enter your email address first'); return; }
-  setSyncStatus('✉️ Magic link sent to ' + email + ' — check your inbox');
-  // Placeholder — replace with: supabase.auth.signInWithOtp({ email })
+  startGoogleSignIn();
 }
 
 
 function syncOAuth(provider) {
-  setSyncStatus(`⏳ Redirecting to ${provider}…`);
-  // Placeholder — replace with: supabase.auth.signInWithOAuth({ provider })
-  setTimeout(() => {
-    syncUser = { email: provider + '-user@example.com', id: 'oauth_' + Date.now() };
-    saveData('giorno_sync_user', syncUser);
-    showSyncSignedIn();
-  }, 1200);
+  if (provider && provider !== 'Google') {
+    setSyncStatus(`${provider} sign-in is coming soon. Google sign-in is ready now.`);
+    return;
+  }
+  startGoogleSignIn();
 }
 
 
@@ -8437,11 +8417,12 @@ async function manualSync() {
 
 function syncSignOut() {
   if (!confirm('Sign out? Your data stays on this device.')) return;
-  syncUser = null;
-  saveData('giorno_sync_user', null);
-  document.getElementById('syncSignedOut').style.display = 'block';
-  document.getElementById('syncSignedIn').style.display = 'none';
-  showToast('Signed out');
+  fetch('/api/logout', { headers: { 'Accept': 'application/json' } })
+    .then(() => {
+      localStorage.removeItem('giorno_sync_user');
+      window.location.href = '/?signed_out=1';
+    })
+    .catch(() => showToast('Could not sign out right now'));
 }
 
 
@@ -8465,6 +8446,32 @@ async function deleteAccount() {
 function setSyncStatus(msg) {
   const el = document.getElementById('syncAuthStatus');
   if (el) el.textContent = msg;
+}
+
+
+function showAuthFeedbackFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const auth = params.get('auth');
+  const authError = params.get('auth_error');
+  const signedOut = params.get('signed_out');
+  if (auth === 'google_connected') {
+    setSyncStatus('Signed in with Google. Your data can now sync across devices.');
+  } else if (signedOut) {
+    setSyncStatus('Signed out. Your local data is still on this device.');
+  } else if (authError) {
+    const messages = {
+      google_not_configured: 'Google sign-in is not configured on the server yet.',
+      missing_auth_session: 'That sign-in session expired. Please try again.',
+      google_callback_failed: 'Google sign-in didn’t finish correctly. Please try again.',
+      session_failed: 'Google sign-in worked, but the app could not open your session.',
+      signin_failed: 'Could not start Google sign-in. Please try again.'
+    };
+    setSyncStatus(messages[authError] || 'Could not sign in right now. Please try again.');
+  }
+  if (auth || authError || signedOut) {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, '', cleanUrl);
+  }
 }
 
 

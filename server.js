@@ -3,6 +3,7 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import pg from 'pg';
 import passport from 'passport';
+import * as oidc from 'openid-client';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
@@ -12,8 +13,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
 const PgSession = connectPgSimple(session);
 const PORT = process.env.PORT || 5000;
+const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+const GOOGLE_ISSUER = new URL('https://accounts.google.com');
 
 const app = express();
+let googleConfigPromise = null;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -26,6 +30,52 @@ const pool = new Pool({
 function isAuthenticated(req, res, next) {
   if (req.isAuthenticated && req.isAuthenticated()) return next();
   return res.status(401).json({ message: 'Unauthorized' });
+}
+
+function isGoogleAuthConfigured() {
+  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+}
+
+async function getGoogleConfig() {
+  if (!isGoogleAuthConfigured()) {
+    throw new Error('Google sign-in is not configured yet');
+  }
+
+  if (!googleConfigPromise) {
+    googleConfigPromise = oidc.discovery(
+      GOOGLE_ISSUER,
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+  }
+
+  return googleConfigPromise;
+}
+
+function getGoogleCallbackUrl() {
+  return new URL('/auth/google/callback', APP_BASE_URL).toString();
+}
+
+function sanitizeReturnTo(value) {
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')) {
+    return value;
+  }
+  return '/';
+}
+
+function buildUserPayload(row, extras = {}) {
+  const firstName = row.first_name || row.firstName || '';
+  const lastName = row.last_name || row.lastName || '';
+  return {
+    id: row.id,
+    email: row.email || '',
+    firstName,
+    lastName,
+    name: [firstName, lastName].filter(Boolean).join(' '),
+    isPaid: Boolean(row.is_paid ?? row.isPaid),
+    isOwner: Boolean(row.is_owner ?? row.isOwner),
+    ...extras
+  };
 }
 
 function toNumberOrNull(value, decimals = null) {
@@ -74,6 +124,20 @@ async function saveUserDataValue(userId, key, value) {
     `,
     [userId, key, JSON.stringify(value)]
   );
+}
+
+async function getLatestUserDataSnapshot(userId) {
+  const result = await pool.query(
+    `
+    SELECT DISTINCT ON (key) key, value
+    FROM user_data
+    WHERE user_id = $1
+    ORDER BY key, created_at DESC, id DESC
+    `,
+    [userId]
+  );
+
+  return Object.fromEntries(result.rows.map((row) => [row.key, row.value]));
 }
 
 async function resolveShortcutUser({ token, userId }) {
@@ -263,13 +327,70 @@ app.get('/health', async (req, res) => {
 
 app.get('/api/login', async (req, res) => {
   try {
-    const user = {
-      id: 'stephanie',
-      email: 'stephaniebarchiesi@gmail.com',
-      first_name: 'Stephanie',
-      last_name: '',
-      is_paid: true,
-      is_owner: true
+    if (!isGoogleAuthConfigured()) {
+      return res.redirect('/?auth_error=google_not_configured');
+    }
+
+    const config = await getGoogleConfig();
+    const codeVerifier = oidc.randomPKCECodeVerifier();
+    const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
+    const state = oidc.randomState();
+    const nonce = oidc.randomNonce();
+    const returnTo = sanitizeReturnTo(req.query.returnTo);
+
+    req.session.authFlow = {
+      provider: 'google',
+      codeVerifier,
+      state,
+      nonce,
+      returnTo
+    };
+
+    const authUrl = oidc.buildAuthorizationUrl(config, {
+      redirect_uri: getGoogleCallbackUrl(),
+      scope: 'openid email profile',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+      state,
+      nonce,
+      prompt: 'select_account'
+    });
+
+    return res.redirect(authUrl.href);
+  } catch (err) {
+    console.error('Login route error:', err);
+    return res.redirect('/?auth_error=signin_failed');
+  }
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const authFlow = req.session.authFlow;
+
+  if (!authFlow || authFlow.provider !== 'google') {
+    return res.redirect('/?auth_error=missing_auth_session');
+  }
+
+  try {
+    const config = await getGoogleConfig();
+    const currentUrl = new URL(req.originalUrl, APP_BASE_URL);
+    const tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
+      pkceCodeVerifier: authFlow.codeVerifier,
+      expectedState: authFlow.state,
+      expectedNonce: authFlow.nonce
+    });
+    const claims = tokens.claims();
+
+    if (!claims?.sub || !claims?.email) {
+      throw new Error('Google did not return a usable account profile');
+    }
+
+    const dbUser = {
+      id: `google_${claims.sub}`,
+      email: claims.email,
+      first_name: claims.given_name || '',
+      last_name: claims.family_name || '',
+      is_paid: false,
+      is_owner: false
     };
 
     await pool.query(
@@ -280,31 +401,33 @@ app.get('/api/login', async (req, res) => {
         email = EXCLUDED.email,
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
-        is_paid = EXCLUDED.is_paid,
-        is_owner = EXCLUDED.is_owner,
         updated_at = NOW()
       `,
       [
-        user.id,
-        user.email,
-        user.first_name,
-        user.last_name,
-        user.is_paid,
-        user.is_owner
+        dbUser.id,
+        dbUser.email,
+        dbUser.first_name,
+        dbUser.last_name,
+        dbUser.is_paid,
+        dbUser.is_owner
       ]
     );
 
+    const user = buildUserPayload(dbUser);
+    delete req.session.authFlow;
+
     req.logIn(user, (err) => {
       if (err) {
-        console.error('Login error:', err);
-        return res.status(500).json({ message: 'Login failed' });
+        console.error('Google login session error:', err);
+        return res.redirect('/?auth_error=session_failed');
       }
 
-      return res.json({ ok: true, user });
+      return res.redirect(`${sanitizeReturnTo(authFlow.returnTo)}?auth=google_connected`);
     });
   } catch (err) {
-    console.error('Login route error:', err);
-    return res.status(500).json({ message: 'Server error', detail: err.message });
+    delete req.session.authFlow;
+    console.error('Google callback error:', err);
+    return res.redirect('/?auth_error=google_callback_failed');
   }
 });
 
@@ -316,6 +439,9 @@ app.get('/api/logout', (req, res) => {
     }
 
     req.session.destroy(() => {
+      if ((req.headers.accept || '').includes('text/html')) {
+        return res.redirect('/?signed_out=1');
+      }
       return res.json({ ok: true });
     });
   });
@@ -480,6 +606,48 @@ app.post('/api/data', isAuthenticated, async (req, res) => {
   }
 });
 
+app.post('/api/data/:key', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const key = req.params.key;
+    const value = req.body?.value;
+
+    if (!key) {
+      return res.status(400).json({ message: 'Missing key' });
+    }
+
+    await saveUserDataValue(userId, key, value);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Single user data insert error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+});
+
+app.delete('/api/account', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    await pool.query('DELETE FROM shortcut_readings WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_data WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    req.logout?.((err) => {
+      if (err) {
+        console.error('Account delete logout error:', err);
+        return res.status(500).json({ message: 'Account deleted, but sign-out failed' });
+      }
+
+      req.session.destroy(() => {
+        return res.json({ ok: true });
+      });
+    });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+});
+
 app.get('/history', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -530,8 +698,11 @@ app.get('/', (req, res) => {
 
       if (req.isAuthenticated && req.isAuthenticated()) {
         const shortcutToken = await getLatestUserDataValue(req.user.id, 'shortcut_token');
-        const user = { ...req.user, shortcutToken: typeof shortcutToken === 'string' ? shortcutToken : null };
-        const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};</script>`;
+        const userData = await getLatestUserDataSnapshot(req.user.id);
+        const user = buildUserPayload(req.user, {
+          shortcutToken: typeof shortcutToken === 'string' ? shortcutToken : null
+        });
+        const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};window.__GIORNO_DATA__ = ${JSON.stringify(userData)};</script>`;
         const headClose = html.indexOf('</head>');
 
         if (headClose !== -1) {
