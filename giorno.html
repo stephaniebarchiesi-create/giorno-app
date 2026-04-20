@@ -198,24 +198,25 @@
     font-size: 30px;
     line-height: 1.08;
     color: #2a231b;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .hero-copy {
     font-size: 14px;
-    line-height: 1.58;
+    line-height: 1.52;
     color: #3e342b;
-    max-width: 42ch;
+    max-width: 34ch;
   }
   .hero-support {
-    margin-top: 10px;
+    margin-top: 8px;
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.52;
     color: #4f4337;
+    max-width: 36ch;
   }
   .hero-actions {
     display: flex;
     gap: 8px;
-    margin-top: 16px;
+    margin-top: 14px;
   }
   .hero-cta {
     border: none;
@@ -305,22 +306,26 @@
     color: #faf7f2;
   }
   .hero-device-note {
-    margin-top: 14px;
-    padding: 12px 13px;
-    border-radius: 16px;
-    border: 1px solid rgba(45, 40, 32, 0.09);
-    background: rgba(255, 255, 255, 0.48);
+    margin-top: 10px;
+    padding: 9px 11px;
+    border-radius: 14px;
+    border: 1px solid rgba(45, 40, 32, 0.06);
+    background: rgba(255, 255, 255, 0.26);
   }
   .hero-device-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
+    color: var(--text2);
+    margin-bottom: 3px;
+    letter-spacing: 0.02em;
   }
   .hero-device-copy {
-    font-size: 12px;
-    line-height: 1.6;
-    color: #4b4035;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text3);
+  }
+  .hero-device-copy strong {
+    color: var(--text2);
   }
   .how-shell {
     margin: 0 20px 14px;
@@ -352,7 +357,7 @@
     font-size: 13px;
     color: var(--text2);
     margin-bottom: 2px;
-    line-height: 1.6;
+    line-height: 1.5;
   }
   .how-grid {
     display: grid;
@@ -391,7 +396,7 @@
   }
   .how-card-copy {
     font-size: 12px;
-    line-height: 1.55;
+    line-height: 1.48;
     color: var(--text2);
   }
   .how-dismiss {
@@ -670,7 +675,7 @@
     .hero-support,
     .how-subtitle {
       font-size: 13px;
-      line-height: 1.55;
+      line-height: 1.48;
     }
     .nav-wrap {
       overflow: visible;
@@ -3582,24 +3587,24 @@
       <div class="hero-panel-top">
         <div>
           <div class="hero-eyebrow">Built for low-energy days</div>
-          <div class="hero-title">Track energy and symptoms, spot patterns, and catch crash warning signs sooner.</div>
+          <div class="hero-title">Track symptoms, spot patterns, and catch harder days sooner.</div>
         </div>
         <button class="hero-dismiss" type="button" onclick="minimizeHeroCTA()" aria-label="Minimize welcome banner">−</button>
       </div>
       <div class="hero-copy">
-        Giorno is for people living with fatigue, brain fog, fluctuating symptoms, PEM, dysautonomia, and other complex conditions that are hard to explain day to day.
+        Giorno is a calm tracker for fatigue, brain fog, PEM, dysautonomia, and other symptoms that shift from day to day.
       </div>
       <div class="hero-support">
-        When your energy is limited, Giorno keeps things simple: log what matters, skip what doesn't, and come back later when you have more capacity.
-      </div>
-      <div class="hero-device-note">
-        <div class="hero-device-title">Use Giorno across devices</div>
-        <div class="hero-device-copy">Create a login in <strong>Devices → Sync</strong> to keep your data on your phone and computer. Want Apple Health, Garmin, Fitbit, Bluetooth, or CSV imports? You’ll find that in <strong>Devices → Wearables</strong>.</div>
+        On lower-energy days, log the basics quickly and come back later if you want more detail.
       </div>
       <div class="hero-actions">
         <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking with Giorno</button>
       </div>
       <a class="hero-link" href="#" onclick="scrollToHowItWorks(); return false;">See how it works</a>
+      <div class="hero-device-note">
+        <div class="hero-device-title">Using Giorno on more than one device?</div>
+        <div class="hero-device-copy">Sign in in <strong>Devices → Sync</strong>. Wearables and imports live in <strong>Devices → Wearables</strong>.</div>
+      </div>
     </div>
     <div class="hero-mini hidden" id="heroMini" role="region" aria-label="Collapsed welcome banner">
       <div class="hero-mini-copy">
@@ -3627,21 +3632,21 @@
           <div class="how-step">1</div>
           <div>
             <div class="how-card-title">Track energy and symptoms</div>
-            <div class="how-card-copy">Log how you actually feel in under a minute, with space to keep it minimal on harder days.</div>
+            <div class="how-card-copy">Log the basics quickly, or keep it extra simple on harder days.</div>
           </div>
         </div>
         <div class="how-card">
           <div class="how-step">2</div>
           <div>
             <div class="how-card-title">See patterns over time</div>
-            <div class="how-card-copy">Giorno helps you notice trends in sleep, symptoms, medications, and better or worse days.</div>
+            <div class="how-card-copy">Notice trends in symptoms, sleep, medications, and better or worse days.</div>
           </div>
         </div>
         <div class="how-card">
           <div class="how-step">3</div>
           <div>
             <div class="how-card-title">Plan around crashes</div>
-            <div class="how-card-copy">Use those patterns to pace earlier, understand what helps, and respond before a crash fully lands.</div>
+            <div class="how-card-copy">Use those patterns to pace earlier and respond before a crash fully lands.</div>
           </div>
         </div>
       </div>
