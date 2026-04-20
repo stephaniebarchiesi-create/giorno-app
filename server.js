@@ -18,6 +18,7 @@ const GOOGLE_ISSUER = new URL('https://accounts.google.com');
 
 const app = express();
 let googleConfigPromise = null;
+let userDataColumnsPromise = null;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -117,6 +118,33 @@ function logUserIn(req, res, user, successResponder) {
       return successResponder();
     });
   });
+}
+
+async function getUserDataColumns() {
+  if (!userDataColumnsPromise) {
+    userDataColumnsPromise = pool
+      .query(
+        `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'user_data'
+        `
+      )
+      .then((result) => new Set(result.rows.map((row) => row.column_name)))
+      .catch((err) => {
+        userDataColumnsPromise = null;
+        throw err;
+      });
+  }
+
+  return userDataColumnsPromise;
+}
+
+async function getUserDataOrderClause() {
+  const columns = await getUserDataColumns();
+  if (columns.has('created_at')) return 'created_at DESC';
+  if (columns.has('id')) return 'id DESC';
+  return 'key ASC';
 }
 
 function renderAuthBridge({ title, body, redirectTo, actionLabel = 'Continue', tone = 'default' }) {
@@ -241,12 +269,13 @@ function toNumberOrNull(value, decimals = null) {
 }
 
 async function getLatestUserDataValue(userId, key) {
+  const orderClause = await getUserDataOrderClause();
   const result = await pool.query(
     `
     SELECT value
     FROM user_data
     WHERE user_id = $1 AND key = $2
-    ORDER BY created_at DESC
+    ORDER BY ${orderClause}
     LIMIT 1
     `,
     [userId, key]
@@ -266,12 +295,13 @@ async function saveUserDataValue(userId, key, value) {
 }
 
 async function getLatestUserDataSnapshot(userId) {
+  const orderClause = await getUserDataOrderClause();
   const result = await pool.query(
     `
     SELECT DISTINCT ON (key) key, value
     FROM user_data
     WHERE user_id = $1
-    ORDER BY key, created_at DESC
+    ORDER BY key, ${orderClause}
     `,
     [userId]
   );
@@ -281,12 +311,13 @@ async function getLatestUserDataSnapshot(userId) {
 
 async function resolveShortcutUser({ token, userId }) {
   if (token) {
+    const orderClause = await getUserDataOrderClause();
     const result = await pool.query(
       `
       SELECT user_id
       FROM user_data
       WHERE key = 'shortcut_token' AND value = to_jsonb($1::text)
-      ORDER BY created_at DESC
+      ORDER BY ${orderClause}
       LIMIT 1
       `,
       [token]
@@ -337,16 +368,22 @@ async function initDb() {
     );
   `);
 
-  await pool.query(`
-    ALTER TABLE user_data
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
-  `);
+  try {
+    await pool.query(`
+      ALTER TABLE user_data
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+    `);
 
-  await pool.query(`
-    UPDATE user_data
-    SET created_at = NOW()
-    WHERE created_at IS NULL;
-  `);
+    await pool.query(`
+      UPDATE user_data
+      SET created_at = NOW()
+      WHERE created_at IS NULL;
+    `);
+  } catch (err) {
+    console.warn('Skipping user_data created_at backfill:', err.message);
+  }
+
+  userDataColumnsPromise = null;
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS shortcut_readings (
@@ -870,13 +907,20 @@ app.get('/shortcut-history', isAuthenticated, async (req, res) => {
 app.get('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
+    const columns = await getUserDataColumns();
+    const createdAtSelect = columns.has('created_at') ? ', created_at' : '';
+    const orderClause = columns.has('created_at')
+      ? 'created_at DESC'
+      : columns.has('id')
+        ? 'id DESC'
+        : 'key ASC';
 
     const result = await pool.query(
       `
-      SELECT key, value, created_at
+      SELECT key, value${createdAtSelect}
       FROM user_data
       WHERE user_id = $1
-      ORDER BY created_at DESC
+      ORDER BY ${orderClause}
       `,
       [userId]
     );
