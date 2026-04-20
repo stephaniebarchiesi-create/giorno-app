@@ -5968,6 +5968,21 @@ const SYNC_KEYS = [
   'giorno_shortcut_token'
 ];
 
+const REQUIRED_SYNC_KEYS = new Set([
+  'giorno_logs',
+  'giorno_symptoms',
+  'giorno_meds',
+  'giorno_conditions',
+  'giorno_journal',
+  'giorno_triggers',
+  'giorno_pem',
+  'giorno_checklist',
+  'giorno_cycle',
+  'giorno_cycle_settings',
+  'giorno_recovery',
+  'giorno_appt_notes'
+]);
+
 function buildLocalSyncPayload() {
   const payload = {};
   SYNC_KEYS.forEach(key => {
@@ -6090,6 +6105,8 @@ function applyServerSnapshotToLocal(snapshot) {
 }
 
 async function uploadLocalSnapshot(payload) {
+  const failures = [];
+
   for (const [key, value] of Object.entries(payload || {})) {
     const res = await fetch('/api/data/' + encodeURIComponent(key), {
       method: 'POST',
@@ -6099,9 +6116,34 @@ async function uploadLocalSnapshot(payload) {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const detail = data.detail ? ` (${data.detail})` : '';
-      throw new Error((data.message || `Could not upload ${key}.`) + detail);
+      const message = (data.message || `Could not upload ${key}.`) + detail;
+      failures.push({ key, message, required: REQUIRED_SYNC_KEYS.has(key) });
     }
   }
+
+  const blockingFailure = failures.find(failure => failure.required);
+  if (blockingFailure) {
+    throw new Error(`${blockingFailure.message} Key: ${blockingFailure.key}`);
+  }
+
+  return {
+    ok: failures.length === 0,
+    failures
+  };
+}
+
+function formatSyncFailureList(failures) {
+  if (!failures?.length) return '';
+  return failures.map(failure => failure.key.replace('giorno_', '')).join(', ');
+}
+
+function formatSyncSuccessMessage(mergedSnapshot, uploadResult) {
+  const logCount = countSnapshotLogs(mergedSnapshot);
+  if (!uploadResult?.failures?.length) {
+    return `${logCount} log entries are now saved to your account. Reload Giorno on your other device to pull the latest copy.`;
+  }
+
+  return `${logCount} log entries synced. A few extras could not be backed up yet: ${formatSyncFailureList(uploadResult.failures)}.`;
 }
 
 async function completeAccountSyncAfterAuth(mode = 'signin') {
@@ -8751,10 +8793,10 @@ async function manualSync() {
     const localPayload = buildLocalSyncPayload();
     const serverSnapshot = await fetchServerSnapshot();
     const mergedSnapshot = mergeSnapshots(localPayload, serverSnapshot);
-    await uploadLocalSnapshot(mergedSnapshot);
+    const uploadResult = await uploadLocalSnapshot(mergedSnapshot);
     applyServerSnapshotToLocal(mergedSnapshot);
     setSyncDot('synced');
-    if (statusEl) statusEl.textContent = `${countSnapshotLogs(mergedSnapshot)} log entries are now saved to your account. Reload Giorno on your other device to pull the latest copy.`;
+    if (statusEl) statusEl.textContent = formatSyncSuccessMessage(mergedSnapshot, uploadResult);
     const timeEl = document.getElementById('lastSyncTime');
     if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
     const countEl = document.getElementById('syncEntryCount');
