@@ -6090,14 +6090,17 @@ function applyServerSnapshotToLocal(snapshot) {
 }
 
 async function uploadLocalSnapshot(payload) {
-  const res = await fetch('/api/data', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Could not upload your local data.');
+  for (const [key, value] of Object.entries(payload || {})) {
+    const res = await fetch('/api/data/' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value })
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const detail = data.detail ? ` (${data.detail})` : '';
+      throw new Error((data.message || `Could not upload ${key}.`) + detail);
+    }
   }
 }
 
