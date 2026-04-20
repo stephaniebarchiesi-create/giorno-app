@@ -5984,6 +5984,89 @@ function countSnapshotLogs(snapshot) {
   return Array.isArray(snapshot?.giorno_logs) ? snapshot.giorno_logs.length : 0;
 }
 
+function countMeaningfulEntries(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === 'object') return Object.keys(value).length;
+  return value == null || value === '' ? 0 : 1;
+}
+
+function mergeObjectsShallow(localValue, serverValue) {
+  return {
+    ...(serverValue && typeof serverValue === 'object' ? serverValue : {}),
+    ...(localValue && typeof localValue === 'object' ? localValue : {})
+  };
+}
+
+function mergeArrayByKey(localValue, serverValue, keyName) {
+  const merged = new Map();
+  (serverValue || []).forEach(item => {
+    if (item && item[keyName] != null) merged.set(item[keyName], item);
+  });
+  (localValue || []).forEach(item => {
+    if (!item || item[keyName] == null) return;
+    const existing = merged.get(item[keyName]);
+    if (!existing) {
+      merged.set(item[keyName], item);
+      return;
+    }
+    merged.set(item[keyName], {
+      ...existing,
+      ...item,
+      symptoms: mergeObjectsShallow(item.symptoms, existing.symptoms),
+      meds: mergeObjectsShallow(item.meds, existing.meds),
+      weather: mergeObjectsShallow(item.weather, existing.weather)
+    });
+  });
+  return Array.from(merged.values());
+}
+
+function chooseRicherValue(localValue, serverValue) {
+  return countMeaningfulEntries(localValue) >= countMeaningfulEntries(serverValue)
+    ? localValue
+    : serverValue;
+}
+
+function mergeSnapshots(localSnapshot, serverSnapshot) {
+  const merged = {};
+  const keys = new Set([
+    ...Object.keys(serverSnapshot || {}),
+    ...Object.keys(localSnapshot || {})
+  ]);
+
+  keys.forEach(key => {
+    const localValue = localSnapshot?.[key];
+    const serverValue = serverSnapshot?.[key];
+
+    if (key === 'giorno_logs') {
+      merged[key] = mergeArrayByKey(localValue, serverValue, 'date')
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+      return;
+    }
+
+    if (['giorno_symptoms', 'giorno_meds', 'giorno_triggers', 'giorno_pem', 'giorno_journal'].includes(key)) {
+      merged[key] = mergeArrayByKey(localValue, serverValue, 'id');
+      return;
+    }
+
+    if (key === 'giorno_checklist') {
+      merged[key] = mergeObjectsShallow(localValue, serverValue);
+      return;
+    }
+
+    merged[key] = chooseRicherValue(localValue, serverValue);
+  });
+
+  return merged;
+}
+
+function snapshotsEqual(a, b) {
+  try {
+    return JSON.stringify(a || {}) === JSON.stringify(b || {});
+  } catch (e) {
+    return false;
+  }
+}
+
 async function fetchServerSnapshot() {
   const res = await fetch('/api/data', { headers: { 'Accept': 'application/json' } });
   if (!res.ok) {
@@ -6029,7 +6112,7 @@ async function completeAccountSyncAfterAuth(mode = 'signin') {
   const serverHasData = Object.keys(serverSnapshot).length > 0;
   const serverLogCount = countSnapshotLogs(serverSnapshot);
 
-  if (serverHasData) {
+  if (serverHasData && Object.keys(localPayload).length === 0) {
     applyServerSnapshotToLocal(serverSnapshot);
     setSyncStatus(`Pulled ${serverLogCount || 'your'} synced entries from your account. Refreshing Giorno…`);
     showToast('Synced from your account');
@@ -6038,11 +6121,19 @@ async function completeAccountSyncAfterAuth(mode = 'signin') {
   }
 
   if (Object.keys(localPayload).length > 0) {
-    await uploadLocalSnapshot(localPayload);
-    setSyncStatus(localLogCount > 0
-      ? `Uploaded ${localLogCount} log entries from this device. Refreshing Giorno…`
-      : 'Account created. This device is now connected and ready to sync.');
-    showToast('This device is now synced');
+    const mergedSnapshot = mergeSnapshots(localPayload, serverSnapshot);
+    const mergedLogCount = countSnapshotLogs(mergedSnapshot);
+    const changed = !snapshotsEqual(mergedSnapshot, serverSnapshot);
+    applyServerSnapshotToLocal(mergedSnapshot);
+    if (changed) {
+      await uploadLocalSnapshot(mergedSnapshot);
+    }
+    setSyncStatus(serverHasData
+      ? `Combined this device with your account. ${mergedLogCount} log entries are now in sync. Refreshing Giorno…`
+      : localLogCount > 0
+        ? `Uploaded ${localLogCount} log entries from this device. Refreshing Giorno…`
+        : 'Account created. This device is now connected and ready to sync.');
+    showToast(serverHasData ? 'Merged your account data' : 'This device is now synced');
     window.location.reload();
     return;
   }
@@ -8654,16 +8745,21 @@ async function manualSync() {
   const statusEl = document.getElementById('syncStatusText');
   if (statusEl) statusEl.textContent = 'Syncing…';
   try {
-    const payload = buildLocalSyncPayload();
-    await uploadLocalSnapshot(payload);
+    const localPayload = buildLocalSyncPayload();
+    const serverSnapshot = await fetchServerSnapshot();
+    const mergedSnapshot = mergeSnapshots(localPayload, serverSnapshot);
+    await uploadLocalSnapshot(mergedSnapshot);
+    applyServerSnapshotToLocal(mergedSnapshot);
     setSyncDot('synced');
-    if (statusEl) statusEl.textContent = 'This device uploaded its latest data. Reload Giorno on your other device to pull it in.';
+    if (statusEl) statusEl.textContent = `${countSnapshotLogs(mergedSnapshot)} log entries are now saved to your account. Reload Giorno on your other device to pull the latest copy.`;
     const timeEl = document.getElementById('lastSyncTime');
     if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+    const countEl = document.getElementById('syncEntryCount');
+    if (countEl) countEl.textContent = countSnapshotLogs(mergedSnapshot) + ' log entries';
     showToast('Synced');
   } catch(e) {
     setSyncDot('error');
-    if (statusEl) statusEl.textContent = 'Sync failed — check connection';
+    if (statusEl) statusEl.textContent = e?.message || 'Sync failed — check connection';
   }
 }
 
