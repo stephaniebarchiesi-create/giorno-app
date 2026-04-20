@@ -5846,6 +5846,8 @@
       <button class="energy-btn" style="flex:1;" onclick="setEditEnergy(5,this)" aria-label="Energy 5 — great, feeling well"><span class="e-emoji">😊</span><span class="e-num">5</span></button>
     </div>
     <div id="editLogSymptoms" style="margin-bottom:16px;"></div>
+    <div class="section-label">Medications</div>
+    <div id="editLogMeds" style="margin-bottom:16px;"></div>
     <div class="section-label">Notes</div>
     <textarea class="notes-area" id="editLogNotes" placeholder="Notes for this day…" style="margin-bottom:12px;"></textarea>
     <div class="modal-actions">
@@ -10006,12 +10008,14 @@ async function checkForShortcutData() {
 let editingLogDate = null;
 let editLogEnergy = null;
 let editLogSymptomVals = {};
+let editLogMeds = {};
 
 
 function openLogEditor(date) {
   editingLogDate = date;
   editLogEnergy = null;
   editLogSymptomVals = {};
+  editLogMeds = {};
 
 
   const log = logs.find(l => l.date === date) || { date, symptoms: {}, energy: null, notes: '' };
@@ -10045,9 +10049,75 @@ function openLogEditor(date) {
     </div>`;
   }).join('');
 
+  editLogMeds = { ...(log.meds || {}) };
+  renderEditLogMeds();
 
   document.getElementById('editLogNotes').value = log.notes || '';
   document.getElementById('editLogModal').classList.add('open');
+}
+
+function renderEditLogMeds() {
+  const container = document.getElementById('editLogMeds');
+  if (!container) return;
+  if (medications.length === 0) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text3);">No medications added yet.</div>';
+    return;
+  }
+
+  const groups = { morning: [], afternoon: [], evening: [], night: [] };
+  const sorted = [...medications].sort((a, b) => medEarliestMinutes(a) - medEarliestMinutes(b));
+  sorted.forEach(med => {
+    (med.times || []).forEach(t => {
+      groups[getTimeGroup(t)].push({ med, time: t });
+    });
+  });
+
+  const groupDefs = [
+    { key: 'morning', label: 'Morning' },
+    { key: 'afternoon', label: 'Afternoon' },
+    { key: 'evening', label: 'Evening' },
+    { key: 'night', label: 'Night' }
+  ];
+
+  let html = '';
+  groupDefs.forEach(({ key, label }) => {
+    const items = groups[key];
+    if (!items.length) return;
+    html += `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">${label}</div>
+      ${items.map(({ med, time }) => {
+        const medKey = med.id + '_' + time;
+        const st = editLogMeds[medKey] || '';
+        const pressed = st === 'taken' ? 'true' : st === 'skipped' ? 'mixed' : 'false';
+        const stLabel = st === 'taken' ? 'taken' : st === 'skipped' ? 'skipped' : 'not logged';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;">
+          <div>
+            <span class="med-name" style="font-size:13px;">${escapeHtml(med.name)}</span>
+            ${med.dose ? `<span class="med-dose" style="margin-left:6px;">${escapeHtml(med.dose)}</span>` : ''}
+          </div>
+          <button class="med-time-btn ${st}" onclick="toggleEditLogMed('${med.id}','${time}',this)" aria-pressed="${pressed}" aria-label="${escapeAttr(`${med.name} at ${time}, ${stLabel}`)}">${formatTimeLabel(time)}</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  container.innerHTML = html || '<div style="font-size:12px;color:var(--text3);">No medication times to edit for this day.</div>';
+}
+
+function toggleEditLogMed(medId, time, btn) {
+  const key = medId + '_' + time;
+  const current = editLogMeds[key];
+  let next = '';
+  if (!current) next = 'taken';
+  else if (current === 'taken') next = 'skipped';
+  else next = '';
+
+  if (next) editLogMeds[key] = next;
+  else delete editLogMeds[key];
+
+  btn.classList.remove('taken', 'skipped');
+  if (next) btn.classList.add(next);
+  btn.setAttribute('aria-pressed', next === 'taken' ? 'true' : next === 'skipped' ? 'mixed' : 'false');
 }
 
 
@@ -10076,6 +10146,7 @@ function saveEditLog() {
     ...existing,
     energy: editLogEnergy || existing.energy,
     symptoms: { ...existing.symptoms, ...editLogSymptomVals },
+    meds: { ...editLogMeds },
     notes,
     date: newDate
   };
@@ -10135,6 +10206,7 @@ function closeEditLogModal(e) {
   if (e && e.target !== document.getElementById('editLogModal')) return;
   document.getElementById('editLogModal').classList.remove('open');
   editingLogDate = null;
+  editLogMeds = {};
 }
 
 
@@ -11214,10 +11286,19 @@ function injectSectionFooters() {
 // ---- WELCOME BACK ----
 function showWelcomeBack() {
   if (logs.length === 0) return;
-  const sorted = [...logs].sort((a,b) => new Date(b.date)-new Date(a.date));
-  const lastDate = sorted[0]?.date;
+  const validPastDates = logs
+    .map(l => l?.date)
+    .filter(Boolean)
+    .filter(date => {
+      const parsed = parseLocalDay(date);
+      return parsed && !Number.isNaN(parsed.getTime()) && date <= todayKey();
+    })
+    .sort((a, b) => String(b).localeCompare(String(a)));
+
+  const lastDate = validPastDates[0];
   if (!lastDate) return;
-  const daysSince = Math.floor((new Date(todayKey()) - new Date(lastDate)) / 86400000);
+  const daysSince = wholeDaysBetween(lastDate, todayKey());
+  if (daysSince == null) return;
   if (daysSince < 3) return; // Only show after 3+ day gap
 
 
@@ -11231,15 +11312,15 @@ function showWelcomeBack() {
   if (daysSince >= 14) {
     emoji.textContent = '🌿';
     title.textContent = 'Good to see you again';
-    text.textContent = `It's been ${daysSince} days. Your data is all here — just log today when you're ready. No catching up needed.`;
+    text.textContent = `Your last log was ${daysSince} days ago. Your data is all here — just log today when you're ready. No catching up needed.`;
   } else if (daysSince >= 7) {
     emoji.textContent = '👋';
     title.textContent = 'Welcome back';
-    text.textContent = `It's been about a week. No worries at all — just start fresh from today.`;
+    text.textContent = `Your last log was about a week ago. No worries at all — just start fresh from today.`;
   } else {
     emoji.textContent = '💙';
     title.textContent = 'Welcome back';
-    text.textContent = `You missed a few days — that's completely okay. Just log today when you're ready.`;
+    text.textContent = `Your last log was a few days ago — that's completely okay. Just log today when you're ready.`;
   }
   banner.style.display = 'flex';
 }
