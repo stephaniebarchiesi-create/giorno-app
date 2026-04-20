@@ -338,6 +338,17 @@ async function initDb() {
   `);
 
   await pool.query(`
+    ALTER TABLE user_data
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+  `);
+
+  await pool.query(`
+    UPDATE user_data
+    SET created_at = NOW()
+    WHERE created_at IS NULL;
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS shortcut_readings (
       id SERIAL PRIMARY KEY,
       user_id VARCHAR NOT NULL,
