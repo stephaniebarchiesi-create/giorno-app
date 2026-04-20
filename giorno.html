@@ -9039,17 +9039,81 @@ const EPWORTH_QUESTIONS = [
   'In a car, stopped in traffic for a few minutes'
 ];
 
+const ASSESSMENT_SCHEDULES = {
+  epworth: {
+    everyDays: 7,
+    label: 'Epworth Sleepiness Scale'
+  }
+};
+
 
 let epworthScores = {};
+
+function parseLocalDay(dateStr) {
+  if (!dateStr) return null;
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
+
+function wholeDaysBetween(startDate, endDate) {
+  const start = parseLocalDay(startDate);
+  const end = parseLocalDay(endDate);
+  if (!start || !end) return null;
+  return Math.floor((end - start) / 86400000);
+}
+
+function getLatestAssessmentLog(field) {
+  return [...logs]
+    .filter(l => l?.[field] != null)
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0] || null;
+}
+
+function getAssessmentScheduleStatus(field) {
+  const schedule = ASSESSMENT_SCHEDULES[field];
+  if (!schedule) return { due: true, schedule: null, latestLog: null, daysSince: null, daysRemaining: 0 };
+
+  const latestLog = getLatestAssessmentLog(field);
+  if (!latestLog?.date) {
+    return { due: true, schedule, latestLog: null, daysSince: null, daysRemaining: 0 };
+  }
+
+  const daysSince = wholeDaysBetween(latestLog.date, todayKey());
+  const due = daysSince == null || daysSince >= schedule.everyDays;
+  return {
+    due,
+    schedule,
+    latestLog,
+    daysSince,
+    daysRemaining: due ? 0 : Math.max(0, schedule.everyDays - daysSince)
+  };
+}
 
 
 function initEpworth() {
   const conditions = loadData('giorno_conditions', []);
   const sleepCondition = conditions.includes('narcolepsy') || conditions.includes('hypersomnia');
   const card = document.getElementById('epworthCard');
-  if (card && sleepCondition) {
+  if (!card) return;
+
+  if (!sleepCondition) {
+    card.style.display = 'none';
+    return;
+  }
+
+  const status = getAssessmentScheduleStatus('epworth');
+  const subtitle = card.querySelector('.card-subtitle');
+  if (subtitle) {
+    subtitle.textContent = status.due
+      ? 'Standard validated tool for daytime sleepiness · takes 2 minutes · shows once a week'
+      : `Already completed ${status.daysSince === 0 ? 'today' : `${status.daysSince} day${status.daysSince === 1 ? '' : 's'} ago`} · shows again in ${status.daysRemaining} day${status.daysRemaining === 1 ? '' : 's'}`;
+  }
+
+  if (status.due) {
     card.style.display = 'block';
     renderEpworthQuestions();
+  } else {
+    card.style.display = 'none';
   }
 }
 
@@ -9103,7 +9167,10 @@ function scoreEpworth() {
   const savedNote = document.getElementById('epworthSavedNote');
   const savedScore = document.getElementById('epworthSavedScore');
   if (savedScore) savedScore.textContent = `${total}/24`;
-  if (savedNote) savedNote.style.display = 'block';
+  if (savedNote) {
+    savedNote.innerHTML = `✓ Logged for this week — <span id="epworthSavedScore">${total}/24</span>`;
+    savedNote.style.display = 'block';
+  }
 
 
   const resultEl = document.getElementById('epworthResult');
@@ -9116,6 +9183,7 @@ function scoreEpworth() {
     </div>`;
   }
   showToast(`Epworth score: ${total}/24`);
+  initEpworth();
 }
 
 
