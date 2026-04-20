@@ -116,6 +116,46 @@
     color: var(--text2);
     text-align: right;
   }
+  .account-banner {
+    display: none;
+    margin: 0 20px 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 92%, white 8%);
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .account-banner.open {
+    display: flex;
+  }
+  .account-banner-copy {
+    min-width: 0;
+  }
+  .account-banner-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .account-banner-subtitle {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text3);
+  }
+  .account-banner-chip {
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgba(106, 143, 122, 0.12);
+    color: var(--accent3);
+    border: 1px solid rgba(106, 143, 122, 0.2);
+    padding: 8px 11px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
   .hero-panel {
     margin: 0 20px 14px;
     padding: 18px 18px;
@@ -605,7 +645,13 @@
     .header-date {
       font-size: 11px;
     }
-    .hero-shell,
+    .account-banner {
+      margin-left: 16px;
+      margin-right: 16px;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  .hero-shell,
     .hero-panel,
     .how-shell,
     .how-strip {
@@ -3460,6 +3506,13 @@
     </div>
     <div class="header-date" id="headerDate"></div>
   </div>
+  <div class="account-banner" id="accountBanner" role="status" aria-live="polite">
+    <div class="account-banner-copy">
+      <div class="account-banner-title" id="accountBannerTitle">Welcome</div>
+      <div class="account-banner-subtitle" id="accountBannerSubtitle">You're signed in and your sync account is active.</div>
+    </div>
+    <div class="account-banner-chip">Signed in</div>
+  </div>
 
   <div class="hero-shell">
     <div class="hero-panel" id="heroPanel">
@@ -5952,6 +6005,7 @@ let todayLog = {
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', () => {
   setDate();
+  initAccountBanner();
   buildTimeScroll('new');
   buildTimeScroll('edit');
   renderSelectedTimes('new');
@@ -6034,6 +6088,24 @@ function setDate() {
     const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     logDateEl.textContent = 'Logging for ' + dateStr;
   }
+}
+
+
+function initAccountBanner() {
+  const banner = document.getElementById('accountBanner');
+  const title = document.getElementById('accountBannerTitle');
+  const subtitle = document.getElementById('accountBannerSubtitle');
+  if (!banner || !title || !subtitle) return;
+
+  if (!currentUser) {
+    banner.classList.remove('open');
+    return;
+  }
+
+  const preferredName = currentUser.firstName || currentUser.name || currentUser.email || 'there';
+  title.textContent = `Welcome, ${preferredName}`;
+  subtitle.textContent = 'You’re signed in, and your Giorno data can stay with you across devices.';
+  banner.classList.add('open');
 }
 
 
