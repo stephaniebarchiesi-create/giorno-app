@@ -8438,21 +8438,7 @@ let syncUser = loadData('giorno_sync_user', null);
 
 function initSync() {
   if (currentUser) {
-    if (syncUser) {
-      syncUser = null;
-      localStorage.removeItem('giorno_sync_user');
-    }
-    document.getElementById('syncSignedOut').style.display = 'none';
-    document.getElementById('syncSignedIn').style.display = 'block';
-    const emailEl = document.getElementById('syncUserEmail');
-    if (emailEl) emailEl.textContent = currentUser.email || (currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : 'Signed in');
-    const countEl = document.getElementById('syncEntryCount');
-    if (countEl) countEl.textContent = logs.length + ' log entries';
-    const timeEl = document.getElementById('lastSyncTime');
-    if (timeEl) timeEl.textContent = 'On page load';
-    setSyncDot('synced');
-    const statusEl = document.getElementById('syncStatusText');
-    if (statusEl) statusEl.textContent = 'Synced to your account';
+    showSyncSignedIn();
   } else {
     if (syncUser) {
       syncUser = null;
@@ -8462,6 +8448,17 @@ function initSync() {
   }
   setDefaultExportDates();
   renderWearableHistory();
+}
+
+
+function applySignedInUser(user, statusMessage = 'Synced to your account') {
+  if (!user) return;
+  currentUser = user;
+  serverSyncEnabled = true;
+  syncUser = null;
+  localStorage.removeItem('giorno_sync_user');
+  initAccountBanner();
+  showSyncSignedIn(statusMessage);
 }
 
 
@@ -8485,7 +8482,11 @@ async function syncSignIn() {
       setSyncStatus(data.message || 'Could not sign you in.');
       return;
     }
-    window.location.href = '/?auth=local_connected';
+    applySignedInUser(data.user, 'Signed in and synced to your account');
+    setSyncStatus('Signed in. Your data can now sync across devices.');
+    const passwordEl = document.getElementById('syncPassword');
+    if (passwordEl) passwordEl.value = '';
+    showToast('Signed in');
   } catch (err) {
     setSyncStatus('Could not sign you in right now. Please try again.');
   }
@@ -8517,21 +8518,26 @@ async function syncSignUp() {
       setSyncStatus(data.message || 'Could not create your account.');
       return;
     }
-    window.location.href = '/?auth=local_connected';
+    applySignedInUser(data.user, 'Account created and synced to your account');
+    setSyncStatus('Account created. You’re now signed in and your sync is active.');
+    const passwordEl = document.getElementById('syncPassword');
+    if (passwordEl) passwordEl.value = '';
+    showToast('Account created');
   } catch (err) {
     setSyncStatus('Could not create your account right now. Please try again.');
   }
 }
 
 
-function showSyncSignedIn() {
+function showSyncSignedIn(statusMessage = 'All data synced') {
   document.getElementById('syncSignedOut').style.display = 'none';
   document.getElementById('syncSignedIn').style.display = 'block';
-  document.getElementById('syncUserEmail').textContent = syncUser?.email || 'Signed in';
+  const signedInLabel = currentUser?.email || syncUser?.email || 'Signed in';
+  document.getElementById('syncUserEmail').textContent = signedInLabel;
   document.getElementById('syncEntryCount').textContent = logs.length + ' log entries';
   document.getElementById('lastSyncTime').textContent = new Date().toLocaleTimeString();
   setSyncDot('synced');
-  document.getElementById('syncStatusText').textContent = 'All data synced';
+  document.getElementById('syncStatusText').textContent = statusMessage;
 }
 
 
