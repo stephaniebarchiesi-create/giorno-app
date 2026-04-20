@@ -264,6 +264,24 @@
     background: #2d2820;
     color: #faf7f2;
   }
+  .hero-device-note {
+    margin-top: 14px;
+    padding: 12px 13px;
+    border-radius: 16px;
+    border: 1px solid rgba(45, 40, 32, 0.09);
+    background: rgba(255, 255, 255, 0.48);
+  }
+  .hero-device-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .hero-device-copy {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #4b4035;
+  }
   .how-shell {
     margin: 0 20px 14px;
   }
@@ -518,6 +536,14 @@
   .nav-dropdown-item.active {
     background: var(--bg2);
     color: var(--text);
+  }
+  .nav-dropdown-note {
+    margin-top: 4px;
+    padding: 10px 12px 6px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 72%, white 28%);
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--text3);
   }
   .panel-launch-hint {
     margin-top: 10px;
@@ -3450,6 +3476,10 @@
       <div class="hero-support">
         When your energy is limited, Giorno keeps things simple: log what matters, skip what doesn't, and come back later when you have more capacity.
       </div>
+      <div class="hero-device-note">
+        <div class="hero-device-title">Use Giorno across devices</div>
+        <div class="hero-device-copy">Create a login in <strong>Devices → Sync</strong> to keep your data on your phone and computer. Want Apple Health, Garmin, Fitbit, Bluetooth, or CSV imports? You’ll find that in <strong>Devices → Wearables</strong>.</div>
+      </div>
       <div class="hero-actions">
         <button class="hero-cta primary" onclick="scrollToStartTracking()">Start tracking with Giorno</button>
       </div>
@@ -3530,8 +3560,9 @@
       <div class="nav-dropdown" id="devicesDropdown">
         <button class="nav-btn" id="devicesBtn" onclick="toggleNavMenu('devicesDropdown', event)">Devices</button>
         <div class="nav-dropdown-menu">
-          <button class="nav-dropdown-item" onclick="showSection('wearables', 'devicesBtn')">Wearables</button>
-          <button class="nav-dropdown-item" onclick="showSection('sync', 'devicesBtn')">Sync</button>
+          <button class="nav-dropdown-item" onclick="showSection('wearables', 'devicesBtn')">Wearables & imports</button>
+          <button class="nav-dropdown-item" onclick="showSection('sync', 'devicesBtn')">Sync & sign in</button>
+          <div class="nav-dropdown-note">Use <strong>Sync & sign in</strong> to keep data across phone and computer. Use <strong>Wearables & imports</strong> for Apple Health shortcuts, Garmin, Fitbit, Bluetooth, and CSV setup.</div>
         </div>
       </div>
       <div class="nav-dropdown" id="moreToolsDropdown">
