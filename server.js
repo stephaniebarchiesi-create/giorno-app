@@ -877,6 +877,17 @@ app.get('/api/data', isAuthenticated, async (req, res) => {
   }
 });
 
+app.get('/api/data/snapshot', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const snapshot = await getLatestUserDataSnapshot(userId);
+    return res.json(snapshot);
+  } catch (err) {
+    console.error('User snapshot fetch error:', err);
+    return res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+});
+
 app.post('/api/data', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;

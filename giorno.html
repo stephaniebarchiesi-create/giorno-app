@@ -6083,19 +6083,14 @@ function snapshotsEqual(a, b) {
 }
 
 async function fetchServerSnapshot() {
-  const res = await fetch('/api/data', { headers: { 'Accept': 'application/json' } });
+  const res = await fetch('/api/data/snapshot', { headers: { 'Accept': 'application/json' } });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Could not fetch your account data.');
+    const detail = data.detail ? ` (${data.detail})` : '';
+    throw new Error((data.message || 'Could not fetch your account data.') + detail);
   }
 
-  const rows = await res.json().catch(() => []);
-  const snapshot = {};
-  rows.forEach(row => {
-    if (!row?.key || Object.prototype.hasOwnProperty.call(snapshot, row.key)) return;
-    snapshot[row.key] = row.value;
-  });
-  return snapshot;
+  return res.json().catch(() => ({}));
 }
 
 function applyServerSnapshotToLocal(snapshot) {
