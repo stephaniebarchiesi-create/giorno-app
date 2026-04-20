@@ -6608,11 +6608,40 @@ function toggleNavMenu(dropdownId, e) {
   if (!dropdown) return;
   const opening = !dropdown.classList.contains('open');
   closeNavMenus();
-  if (opening) dropdown.classList.add('open');
+  if (opening) {
+    dropdown.classList.add('open');
+    requestAnimationFrame(() => positionNavDropdownMenu(dropdown));
+  }
 }
 
 function closeNavMenus() {
   document.querySelectorAll('.nav-dropdown').forEach(dropdown => dropdown.classList.remove('open'));
+}
+
+function positionNavDropdownMenu(dropdown) {
+  const menu = dropdown?.querySelector('.nav-dropdown-menu');
+  const button = dropdown?.querySelector('.nav-btn');
+  if (!menu || !button) return;
+
+  if (window.innerWidth > 640) {
+    menu.style.left = '';
+    menu.style.right = '';
+    menu.style.transform = '';
+    return;
+  }
+
+  const margin = 16;
+  const dropdownRect = dropdown.getBoundingClientRect();
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const maxLeft = Math.max(margin, window.innerWidth - menuRect.width - margin);
+  const desiredLeft = buttonRect.left + (buttonRect.width / 2) - (menuRect.width / 2);
+  const clampedLeft = Math.max(margin, Math.min(desiredLeft, maxLeft));
+  const relativeLeft = clampedLeft - dropdownRect.left;
+
+  menu.style.left = `${relativeLeft}px`;
+  menu.style.right = 'auto';
+  menu.style.transform = 'none';
 }
 
 function prepareFloatingPanel(panelId, options = {}) {
@@ -6789,6 +6818,11 @@ function handleGlobalKeydown(e) {
   if (editLogModal?.classList.contains('open')) closeEditLogModal();
 }
 
+function repositionOpenNavDropdown() {
+  const openDropdown = document.querySelector('.nav-dropdown.open');
+  if (openDropdown) positionNavDropdownMenu(openDropdown);
+}
+
 function updateNavScrollHint() {
   const nav = document.getElementById('topNav');
   const wrap = document.getElementById('navWrap');
@@ -6806,6 +6840,7 @@ function initNavScrollHint() {
   if (!nav) return;
   nav.addEventListener('scroll', updateNavScrollHint, { passive: true });
   window.addEventListener('resize', updateNavScrollHint);
+  window.addEventListener('resize', repositionOpenNavDropdown);
   document.addEventListener('click', handleGlobalDocumentClick);
   document.addEventListener('keydown', handleGlobalKeydown);
   requestAnimationFrame(updateNavScrollHint);
