@@ -988,16 +988,20 @@ app.get('/', (req, res) => {
       let html = readFileSync(filePath, 'utf8');
 
       if (req.isAuthenticated && req.isAuthenticated()) {
-        const shortcutToken = await getLatestUserDataValue(req.user.id, 'shortcut_token');
-        const userData = await getLatestUserDataSnapshot(req.user.id);
-        const user = buildUserPayload(req.user, {
-          shortcutToken: typeof shortcutToken === 'string' ? shortcutToken : null
-        });
-        const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};window.__GIORNO_DATA__ = ${JSON.stringify(userData)};</script>`;
-        const headClose = html.indexOf('</head>');
+        try {
+          const shortcutToken = await getLatestUserDataValue(req.user.id, 'shortcut_token');
+          const userData = await getLatestUserDataSnapshot(req.user.id);
+          const user = buildUserPayload(req.user, {
+            shortcutToken: typeof shortcutToken === 'string' ? shortcutToken : null
+          });
+          const injection = `<script>window.__GIORNO_USER__ = ${JSON.stringify(user)};window.__GIORNO_DATA__ = ${JSON.stringify(userData)};</script>`;
+          const headClose = html.indexOf('</head>');
 
-        if (headClose !== -1) {
-          html = html.slice(0, headClose) + injection + html.slice(headClose);
+          if (headClose !== -1) {
+            html = html.slice(0, headClose) + injection + html.slice(headClose);
+          }
+        } catch (injectErr) {
+          console.error('Auth bootstrap injection error:', injectErr);
         }
       }
 
