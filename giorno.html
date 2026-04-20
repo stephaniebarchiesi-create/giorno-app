@@ -5944,6 +5944,113 @@ function saveData(key, val) {
   }
 }
 
+const SYNC_KEYS = [
+  'giorno_logs',
+  'giorno_symptoms',
+  'giorno_meds',
+  'giorno_conditions',
+  'giorno_wearable',
+  'giorno_journal',
+  'giorno_triggers',
+  'giorno_pem',
+  'giorno_caregiver',
+  'giorno_oauth',
+  'giorno_onboarded',
+  'giorno_reminders',
+  'giorno_cycle',
+  'giorno_cycle_settings',
+  'giorno_checklist',
+  'giorno_routine_defaults',
+  'giorno_recovery',
+  'giorno_appt_notes',
+  'giorno_weather_enabled',
+  'giorno_today_weather',
+  'giorno_shortcut_token'
+];
+
+function buildLocalSyncPayload() {
+  const payload = {};
+  SYNC_KEYS.forEach(key => {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return;
+    try {
+      payload[key] = JSON.parse(raw);
+    } catch (e) {}
+  });
+  return payload;
+}
+
+function countSnapshotLogs(snapshot) {
+  return Array.isArray(snapshot?.giorno_logs) ? snapshot.giorno_logs.length : 0;
+}
+
+async function fetchServerSnapshot() {
+  const res = await fetch('/api/data', { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || 'Could not fetch your account data.');
+  }
+
+  const rows = await res.json().catch(() => []);
+  const snapshot = {};
+  rows.forEach(row => {
+    if (!row?.key || Object.prototype.hasOwnProperty.call(snapshot, row.key)) return;
+    snapshot[row.key] = row.value;
+  });
+  return snapshot;
+}
+
+function applyServerSnapshotToLocal(snapshot) {
+  Object.entries(snapshot || {}).forEach(([key, value]) => {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  });
+}
+
+async function uploadLocalSnapshot(payload) {
+  const res = await fetch('/api/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || 'Could not upload your local data.');
+  }
+}
+
+async function completeAccountSyncAfterAuth(mode = 'signin') {
+  const actionLabel = mode === 'signup' ? 'account' : 'sign-in';
+  setSyncDot('syncing');
+  setSyncStatus(`Finishing your ${actionLabel}…`);
+
+  const localPayload = buildLocalSyncPayload();
+  const localLogCount = countSnapshotLogs(localPayload);
+  const serverSnapshot = await fetchServerSnapshot();
+  const serverHasData = Object.keys(serverSnapshot).length > 0;
+  const serverLogCount = countSnapshotLogs(serverSnapshot);
+
+  if (serverHasData) {
+    applyServerSnapshotToLocal(serverSnapshot);
+    setSyncStatus(`Pulled ${serverLogCount || 'your'} synced entries from your account. Refreshing Giorno…`);
+    showToast('Synced from your account');
+    window.location.reload();
+    return;
+  }
+
+  if (Object.keys(localPayload).length > 0) {
+    await uploadLocalSnapshot(localPayload);
+    setSyncStatus(localLogCount > 0
+      ? `Uploaded ${localLogCount} log entries from this device. Refreshing Giorno…`
+      : 'Account created. This device is now connected and ready to sync.');
+    showToast('This device is now synced');
+    window.location.reload();
+    return;
+  }
+
+  setSyncDot('synced');
+  setSyncStatus('You’re signed in. This device is now connected to your account.');
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -8438,7 +8545,7 @@ let syncUser = loadData('giorno_sync_user', null);
 
 function initSync() {
   if (currentUser) {
-    showSyncSignedIn();
+    showSyncSignedIn('Signed in. This device is connected to your account.');
   } else {
     if (syncUser) {
       syncUser = null;
@@ -8483,12 +8590,12 @@ async function syncSignIn() {
       return;
     }
     applySignedInUser(data.user, 'Signed in and synced to your account');
-    setSyncStatus('Signed in. Your data can now sync across devices.');
+    setSyncStatus('Signed in. Checking your account data…');
     const passwordEl = document.getElementById('syncPassword');
     if (passwordEl) passwordEl.value = '';
-    showToast('Signed in');
+    await completeAccountSyncAfterAuth('signin');
   } catch (err) {
-    setSyncStatus('Could not sign you in right now. Please try again.');
+    setSyncStatus(err?.message || 'Could not sign you in right now. Please try again.');
   }
 }
 
@@ -8519,12 +8626,12 @@ async function syncSignUp() {
       return;
     }
     applySignedInUser(data.user, 'Account created and synced to your account');
-    setSyncStatus('Account created. You’re now signed in and your sync is active.');
+    setSyncStatus('Account created. Connecting this device…');
     const passwordEl = document.getElementById('syncPassword');
     if (passwordEl) passwordEl.value = '';
-    showToast('Account created');
+    await completeAccountSyncAfterAuth('signup');
   } catch (err) {
-    setSyncStatus('Could not create your account right now. Please try again.');
+    setSyncStatus(err?.message || 'Could not create your account right now. Please try again.');
   }
 }
 
@@ -8547,15 +8654,10 @@ async function manualSync() {
   const statusEl = document.getElementById('syncStatusText');
   if (statusEl) statusEl.textContent = 'Syncing…';
   try {
-    const keys = ['giorno_logs','giorno_symptoms','giorno_meds','giorno_conditions','giorno_wearable','giorno_journal','giorno_triggers','giorno_pem','giorno_caregiver','giorno_oauth','giorno_onboarded','giorno_reminders','giorno_cycle','giorno_checklist'];
-    const payload = {};
-    keys.forEach(k => {
-      const val = localStorage.getItem(k);
-      if (val !== null) { try { payload[k] = JSON.parse(val); } catch(e) {} }
-    });
-    await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const payload = buildLocalSyncPayload();
+    await uploadLocalSnapshot(payload);
     setSyncDot('synced');
-    if (statusEl) statusEl.textContent = 'All data synced';
+    if (statusEl) statusEl.textContent = 'This device uploaded its latest data. Reload Giorno on your other device to pull it in.';
     const timeEl = document.getElementById('lastSyncTime');
     if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
     showToast('Synced');
