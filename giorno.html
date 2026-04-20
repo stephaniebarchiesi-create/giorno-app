@@ -4870,9 +4870,14 @@
           <strong>Your data is never sold or used for advertising.</strong>
         </div>
 
-
-        <button class="save-btn" style="width:100%;text-align:center;" onclick="startGoogleSignIn()">Continue with Google →</button>
-        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Google sign-in is available now. Apple, GitHub, and email sign-in are coming soon.</div>
+        <input type="text" id="syncFirstName" class="add-symptom-input" placeholder="First name (optional)">
+        <input type="email" id="syncEmail" class="add-symptom-input" placeholder="Email address" autocomplete="email">
+        <input type="password" id="syncPassword" class="add-symptom-input" placeholder="Password" autocomplete="current-password">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="save-btn" style="width:100%;text-align:center;" onclick="syncSignUp()">Create account</button>
+          <button class="add-btn" style="width:100%;text-align:center;" onclick="syncSignIn()">Sign in</button>
+        </div>
+        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;">Use the same email and password on your phone and computer to keep your Giorno data in sync.</div>
         <div id="syncAuthStatus" style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;min-height:18px;"></div>
       </div>
 
@@ -8324,7 +8329,7 @@ function downloadFile(content, filename, type) {
 }
 
 
-// ---- CLOUD SYNC (UI layer — connects to Supabase when live) ----
+// ---- CLOUD SYNC ----
 let syncUser = loadData('giorno_sync_user', null);
 
 
@@ -8357,32 +8362,62 @@ function initSync() {
 }
 
 
-function startGoogleSignIn() {
-  window.location.href = '/api/login?returnTo=/';
-}
-
-
-function syncSignIn() {
-  startGoogleSignIn();
-}
-
-
-function syncSignUp() {
-  startGoogleSignIn();
-}
-
-
-function syncMagicLink() {
-  startGoogleSignIn();
-}
-
-
-function syncOAuth(provider) {
-  if (provider && provider !== 'Google') {
-    setSyncStatus(`${provider} sign-in is coming soon. Google sign-in is ready now.`);
+async function syncSignIn() {
+  const email = document.getElementById('syncEmail')?.value.trim() || '';
+  const password = document.getElementById('syncPassword')?.value || '';
+  if (!email || !password) {
+    setSyncStatus('Please enter your email and password.');
     return;
   }
-  startGoogleSignIn();
+
+  setSyncStatus('Signing you in…');
+  try {
+    const res = await fetch('/api/login/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setSyncStatus(data.message || 'Could not sign you in.');
+      return;
+    }
+    window.location.href = '/?auth=local_connected';
+  } catch (err) {
+    setSyncStatus('Could not sign you in right now. Please try again.');
+  }
+}
+
+
+async function syncSignUp() {
+  const firstName = document.getElementById('syncFirstName')?.value.trim() || '';
+  const email = document.getElementById('syncEmail')?.value.trim() || '';
+  const password = document.getElementById('syncPassword')?.value || '';
+  if (!email || !password) {
+    setSyncStatus('Please enter your email and password.');
+    return;
+  }
+  if (password.length < 8) {
+    setSyncStatus('Choose a password with at least 8 characters.');
+    return;
+  }
+
+  setSyncStatus('Creating your account…');
+  try {
+    const res = await fetch('/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, email, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setSyncStatus(data.message || 'Could not create your account.');
+      return;
+    }
+    window.location.href = '/?auth=local_connected';
+  } catch (err) {
+    setSyncStatus('Could not create your account right now. Please try again.');
+  }
 }
 
 
@@ -8463,6 +8498,8 @@ function showAuthFeedbackFromUrl() {
   const signedOut = params.get('signed_out');
   if (auth === 'google_connected') {
     setSyncStatus('Signed in with Google. Your data can now sync across devices.');
+  } else if (auth === 'local_connected') {
+    setSyncStatus('Signed in. Your data can now sync across devices.');
   } else if (signedOut) {
     setSyncStatus('Signed out. Your local data is still on this device.');
   } else if (authError) {

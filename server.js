@@ -78,6 +78,41 @@ function buildUserPayload(row, extras = {}) {
   };
 }
 
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+  if (!storedHash || !storedHash.includes(':')) return false;
+  const [salt, expectedHash] = storedHash.split(':');
+  const actualHash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(actualHash, 'hex'), Buffer.from(expectedHash, 'hex'));
+}
+
+function logUserIn(req, res, user, successResponder) {
+  req.logIn(user, (err) => {
+    if (err) {
+      console.error('Session login error:', err);
+      return res.status(500).json({ message: 'Could not open your session' });
+    }
+
+    return req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('Session save error:', saveErr);
+        return res.status(500).json({ message: 'Could not save your session' });
+      }
+
+      return successResponder();
+    });
+  });
+}
+
 function renderAuthBridge({ title, body, redirectTo, actionLabel = 'Continue', tone = 'default' }) {
   const safeTitle = String(title || 'Connecting...');
   const safeBody = String(body || '');
@@ -267,11 +302,23 @@ async function initDb() {
       email VARCHAR UNIQUE,
       first_name VARCHAR,
       last_name VARCHAR,
+      password_hash TEXT,
+      auth_provider VARCHAR DEFAULT 'local',
       is_paid BOOLEAN DEFAULT FALSE,
       is_owner BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS password_hash TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS auth_provider VARCHAR DEFAULT 'local';
   `);
 
   await pool.query(`
@@ -420,6 +467,91 @@ app.get('/health', async (req, res) => {
   } catch (err) {
     console.error('Healthcheck failed:', err);
     return res.status(500).json({ ok: false, message: 'Database unavailable' });
+  }
+});
+
+app.post('/api/signup', async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    const firstName = String(req.body?.firstName || '').trim();
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const existing = await pool.query(
+      `SELECT * FROM users WHERE email = $1 LIMIT 1`,
+      [email]
+    );
+
+    if (existing.rows[0]) {
+      return res.status(409).json({ message: 'An account with that email already exists' });
+    }
+
+    const dbUser = {
+      id: `local_${crypto.randomUUID()}`,
+      email,
+      first_name: firstName,
+      last_name: '',
+      password_hash: hashPassword(password),
+      auth_provider: 'local',
+      is_paid: false,
+      is_owner: false
+    };
+
+    await pool.query(
+      `
+      INSERT INTO users (id, email, first_name, last_name, password_hash, auth_provider, is_paid, is_owner, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      `,
+      [
+        dbUser.id,
+        dbUser.email,
+        dbUser.first_name,
+        dbUser.last_name,
+        dbUser.password_hash,
+        dbUser.auth_provider,
+        dbUser.is_paid,
+        dbUser.is_owner
+      ]
+    );
+
+    const user = buildUserPayload(dbUser);
+    return logUserIn(req, res, user, () => res.json({ ok: true, user }));
+  } catch (err) {
+    console.error('Signup error:', err);
+    return res.status(500).json({ message: 'Could not create your account' });
+  }
+});
+
+app.post('/api/login/password', async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM users WHERE email = $1 LIMIT 1`,
+      [email]
+    );
+    const row = result.rows[0];
+
+    if (!row || row.auth_provider !== 'local' || !verifyPassword(password, row.password_hash)) {
+      return res.status(401).json({ message: 'Incorrect email or password' });
+    }
+
+    const user = buildUserPayload(row);
+    return logUserIn(req, res, user, () => res.json({ ok: true, user }));
+  } catch (err) {
+    console.error('Password login error:', err);
+    return res.status(500).json({ message: 'Could not sign you in' });
   }
 });
 
