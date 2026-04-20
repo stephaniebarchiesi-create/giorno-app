@@ -78,6 +78,12 @@ function buildUserPayload(row, extras = {}) {
   };
 }
 
+function hasValidMaintenanceKey(req) {
+  const expected = process.env.MAINTENANCE_KEY;
+  const provided = req.query.key || req.headers['x-maintenance-key'];
+  return Boolean(expected && provided && provided === expected);
+}
+
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
@@ -970,6 +976,46 @@ app.get('/history', isAuthenticated, async (req, res) => {
   } catch (err) {
     console.error('History fetch error:', err);
     return res.status(500).json({ message: 'Server error', detail: err.message });
+  }
+});
+
+// Temporary maintenance route for clearing duplicate test accounts.
+app.get('/api/admin/cleanup-sync-test-accounts', async (req, res) => {
+  if (!hasValidMaintenanceKey(req)) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const targetEmails = [
+    'nikkisixxchikk@aol.com',
+    'stephaniebarchiesi@gmail.com'
+  ];
+
+  try {
+    const usersResult = await pool.query(
+      `
+      SELECT id, email
+      FROM users
+      WHERE lower(email) = ANY($1)
+      `,
+      [targetEmails.map((email) => email.toLowerCase())]
+    );
+
+    const userIds = usersResult.rows.map((row) => row.id);
+
+    if (userIds.length > 0) {
+      await pool.query('DELETE FROM shortcut_readings WHERE user_id = ANY($1)', [userIds]);
+      await pool.query('DELETE FROM user_data WHERE user_id = ANY($1)', [userIds]);
+      await pool.query('DELETE FROM users WHERE id = ANY($1)', [userIds]);
+    }
+
+    return res.json({
+      ok: true,
+      deletedEmails: usersResult.rows.map((row) => row.email),
+      deletedCount: usersResult.rows.length
+    });
+  } catch (err) {
+    console.error('Cleanup sync test accounts error:', err);
+    return res.status(500).json({ message: 'Could not delete accounts', detail: err.message });
   }
 });
 
