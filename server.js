@@ -246,7 +246,7 @@ async function getLatestUserDataValue(userId, key) {
     SELECT value
     FROM user_data
     WHERE user_id = $1 AND key = $2
-    ORDER BY created_at DESC, id DESC
+    ORDER BY created_at DESC
     LIMIT 1
     `,
     [userId, key]
@@ -271,7 +271,7 @@ async function getLatestUserDataSnapshot(userId) {
     SELECT DISTINCT ON (key) key, value
     FROM user_data
     WHERE user_id = $1
-    ORDER BY key, created_at DESC, id DESC
+    ORDER BY key, created_at DESC
     `,
     [userId]
   );
@@ -286,7 +286,7 @@ async function resolveShortcutUser({ token, userId }) {
       SELECT user_id
       FROM user_data
       WHERE key = 'shortcut_token' AND value = to_jsonb($1::text)
-      ORDER BY created_at DESC, id DESC
+      ORDER BY created_at DESC
       LIMIT 1
       `,
       [token]
@@ -862,7 +862,7 @@ app.get('/api/data', isAuthenticated, async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT id, key, value, created_at
+      SELECT key, value, created_at
       FROM user_data
       WHERE user_id = $1
       ORDER BY created_at DESC
